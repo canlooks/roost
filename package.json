@@ -5,8 +5,5 @@
     "packages/*"
   ],
   "author": "C.CanLiang <canlooks@gmail.com>",
-  "description": "A lightweight micro service framework",
-  "dependencies": {
-    "path-to-regexp": "^8.3.0"
-  }
+  "description": "A backend micro service framework"
 }
