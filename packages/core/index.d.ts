@@ -4,8 +4,16 @@ declare namespace Roost {
      * App
      */
 
-    function createApp<T extends any[]>(modules: [...T]): RecurseConstruct<T>
-    function createApp<T>(modules: T): RecurseConstruct<T>
+    class Roost<T = any> extends Component {
+        static use<O>(plugin: PluginFunction<O>, options?: O): typeof Roost
+        static use(plugins: PluginHooks[]): typeof Roost
+        static use(plugin: PluginHooks): typeof Roost
+
+        static create<T extends any[]>(modules: [...T], onLoad?: (instances: RecurseConstruct<T>) => void): Roost
+        static create<T>(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void): Roost
+
+        constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void)
+    }
 
     /**
      * -------------------------------------------------------------------------------------
@@ -19,8 +27,18 @@ declare namespace Roost {
      * Container
      */
 
-    const Container: {
-        get<C extends Component>(component: C): InstanceType<C>
+    class Container {
+        get<C extends ClassType>(component: C): InstanceType<C>
+    }
+
+    /**
+     * -------------------------------------------------------------------------------------
+     * Component
+     */
+
+    class Component {
+        container: Container
+        invoke: InvokeFunction
     }
 
     /**
@@ -41,7 +59,7 @@ declare namespace Roost {
      * Inject
      */
 
-    function Inject(component: Component): PropertyDecorator
+    function Inject(component: ClassType): PropertyDecorator
 
     /**
      * -------------------------------------------------------------------------------------
@@ -64,8 +82,10 @@ declare namespace Roost {
      * Invoke
      */
 
-    function invoke<T = any>(path: string, ...args: any): T
-    function invoke<T = any>(pattern: Obj, ...args: any): T
+    type InvokeFunction = {
+        <T = any>(path: string, ...args: any): T
+        <T = any>(pattern: Obj, ...args: any): T
+    }
 
     /**
      * -------------------------------------------------------------------------------------
@@ -83,31 +103,38 @@ declare namespace Roost {
 
     /**
      * -------------------------------------------------------------------------------------
-     * Utility
+     * Plugin
      */
+
+    type PluginHooks = {
+        onCreated?: (app: Roost) => void
+    }
+
+    type PluginFunction<O = any> = (options: O) => PluginHooks
 
     /**
      * -------------------------------------------------------------------------------------
      * Internal types
      */
 
-    type Component<I = any, A = any> = new (...args: A[]) => I
+    type ClassType<I = any, A = any> = new (...args: A[]) => I
     type Fn<R = any, A = any, T = any> = (this: T, ...args: A[]) => R
     type Obj<V = any, K extends string = string> = Record<K, V>
 
-    type RecurseConstruct<T> = T extends Component<infer R> ? R
+    type RecurseConstruct<T> = T extends ClassType<infer R> ? R
         : T extends Map<infer K, infer R> ? Map<K, RecurseConstruct<R>>
             : T extends Set<infer R> ? Set<RecurseConstruct<R>>
                 : T extends Record<any, any> | any[] ? { [K in keyof T]: RecurseConstruct<T[K]> }
                     : T
 
     type ActionItem = {
-        component: Component
+        component: ClassType
         propertyKey: PropertyKey
     }
 
     type StringRouteItem = {
-        children?: Map<string, StringRouteItem | StringRouteAction>
+        path: string
+        children?: Set<StringRouteItem | StringRouteAction>
     }
 
     interface StringRouteAction extends StringRouteItem, ActionItem {
@@ -121,9 +148,30 @@ declare namespace Roost {
     interface ObjectRouteAction extends ObjectRouteItem, ActionItem {
     }
 
-    type PluginHooks = {
+    /**
+     * -------------------------------------------------------------------------------------
+     * Utility
+     */
 
-    }
+    function registerComponents<T extends any[]>(components: [...T], register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
+    function registerComponents<T>(components: T, register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
+
+    function registerDecorator<C extends ClassType>(component: C, callback: (instance: InstanceType<C>, container: Container) => void, sequence?: number): void
+
+    function implementDecorator<C extends ClassType>(component: C, instance: InstanceType<C>, container: Container): void
+
+    function getMapValue<K, V>(data: Map<K, V>, key: K): V | undefined
+    function getMapValue<K, V>(data: Map<K, V>, key: K, defaultValue: () => V): V
+    function getMapValue<K extends object, V>(data: WeakMap<K, V>, key: K): V | undefined
+    function getMapValue<K extends object, V>(data: WeakMap<K, V>, key: K, defaultValue: () => V): V
+
+    function joinPath(path1: string, path2: string, separateWithSlash: boolean): string
+
+    function assignObject(obj1: Obj, obj2?: Obj): Obj
+
+    function matchObject(routeObject: Obj, invokeObject: Obj): boolean
+
+    function isPromise<T>(it: any): it is Promise<T>
 }
 
 export = Roost

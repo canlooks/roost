@@ -1,5 +1,5 @@
 import {registerDecorator} from './utility'
-import {Component, Obj, ObjectRouteAction, StringRouteAction} from '../index'
+import {ClassType, Obj, ObjectRouteAction, StringRouteAction} from '../index'
 import {component_objectRouteItem, component_stringRouteItem} from './controller'
 import {methodWrapper} from './debugHelper'
 
@@ -7,7 +7,7 @@ export function Action(path: string): MethodDecorator
 export function Action(pattern: Obj): MethodDecorator
 export function Action(pattern: string | Obj) {
     return (prototype: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor) => {
-        const component = prototype.constructor as Component
+        const component = prototype.constructor as ClassType
 
         registerDecorator(component, () => {
             if (typeof pattern === 'string') {
@@ -15,9 +15,13 @@ export function Action(pattern: string | Obj) {
                 if (!routeItem) {
                     throw Error('"@Controller()" must be used in conjunction, when using "@Action()"')
                 }
-                const subRouteItem: StringRouteAction = {component, propertyKey}
-                routeItem.children ||= new Map()
-                routeItem.children.set(pattern, subRouteItem)
+                const subRouteItem: StringRouteAction = {
+                    path: pattern,
+                    component,
+                    propertyKey
+                }
+                routeItem.children ||= new Set()
+                routeItem.children.add(subRouteItem)
             } else {
                 const routeItem = component_objectRouteItem.get(component)
                 if (!routeItem) {

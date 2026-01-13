@@ -1,17 +1,19 @@
 import {getMapValue, registerDecorator} from './utility'
-import {Component} from '../index'
+import {ClassType} from '../index'
 import {methodWrapper} from './debugHelper'
 
-const component_pendingInitializers = new Map<Component, any[]>
+const component_pendingInitializers = new Map<ClassType, any[]>
+const instance_pendingInitializers = new WeakMap<object, any[]>
 
 export function Initializer(target: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor): void
 export function Initializer(): MethodDecorator
 export function Initializer(a?: any, b?: any, c?: any): any {
     const fn = (prototype: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor) => {
-        const component = prototype.constructor as Component
+        const component = prototype.constructor as ClassType
         registerDecorator(component, instance => {
-            const pendingInitializers = getMapValue(component_pendingInitializers, component, () => [])
-            pendingInitializers.push(instance[propertyKey]())
+            const returnValue = instance[propertyKey]()
+            getMapValue(component_pendingInitializers, component, () => []).push(returnValue)
+            getMapValue(instance_pendingInitializers, instance, () => []).push(returnValue)
         }, 2)
 
         descriptor.value = methodWrapper(descriptor.value, component, propertyKey)
@@ -25,9 +27,8 @@ export function Pending(target: Object, propertyKey: PropertyKey): void
 export function Pending(): PropertyDecorator
 export function Pending(a?: any, b?: any): any {
     const fn = (prototype: Object, propertyKey: PropertyKey) => {
-        const component = prototype.constructor as Component
-        registerDecorator(component, async instance => {
-            const pendingInitializers = component_pendingInitializers.get(component)
+        registerDecorator(prototype.constructor as ClassType, async instance => {
+            const pendingInitializers = instance_pendingInitializers.get(instance)
             instance[propertyKey] = pendingInitializers
                 ? Promise.all([...pendingInitializers])
                 : Promise.resolve()
@@ -40,9 +41,8 @@ export function Ready(target: Object, propertyKey: PropertyKey, descriptor: Prop
 export function Ready(): MethodDecorator
 export function Ready(a?: any, b?: any, c?: any): any {
     const fn = (prototype: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor) => {
-        const component = prototype.constructor as Component
-        registerDecorator(component, async instance => {
-            const pendingInitializers = component_pendingInitializers.get(component)
+        registerDecorator(prototype.constructor as ClassType, async instance => {
+            const pendingInitializers = instance_pendingInitializers.get(instance)
             if (!pendingInitializers) {
                 instance[propertyKey]()
                 return

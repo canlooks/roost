@@ -1,4 +1,4 @@
-import {Action, Controller, Init, invoke, Params, Pending, Query, Ready, Roost} from '../src'
+import {Action, Controller, Init, Params, Pending, Query, Ready, Roost} from '../src'
 
 @Controller({ctrl: 'root'})
 class Root {
@@ -47,10 +47,10 @@ class Sub {
 
 console.log('start')
 
-const m = Roost.create({
+const app = Roost.create({
     controllers: [Root, Sub] as const
 }, async ({controllers: [Root]}) => {
     console.log('Roost loaded')
-    const res = await invoke({ctrl: 'root', act: 'fn'})
+    const res = await app.invoke({ctrl: 'root', act: 'fn'})
     console.log(res)
 })

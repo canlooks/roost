@@ -1,8 +1,9 @@
-import {Component, Obj, RecurseConstruct} from '../index'
+import {ClassType, Container, Obj, RecurseConstruct} from '../index'
+import {logPrefix} from './debugHelper'
 
-export function registerComponents<T extends any[]>(components: [...T], register: <C extends Component>(component: C) => InstanceType<C>): RecurseConstruct<T>
-export function registerComponents<T>(components: T, register: <C extends Component>(component: C) => InstanceType<C>): RecurseConstruct<T>
-export function registerComponents(components: any, register: <C extends Component>(component: C) => InstanceType<C>) {
+export function registerComponents<T extends any[]>(components: [...T], register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
+export function registerComponents<T>(components: T, register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
+export function registerComponents(components: any, register: <C extends ClassType>(component: C) => InstanceType<C>) {
     if (typeof components === 'function') {
         return register(components)
     }
@@ -22,23 +23,23 @@ export function registerComponents(components: any, register: <C extends Compone
     return components
 }
 
-const component_sequence_callbacks = new WeakMap<Component, Set<(instance: any) => void>[]>()
+const component_sequence_callbacks = new WeakMap<ClassType, Set<(instance: any, container: Container) => void>[]>()
 
-export function registerDecorator<C extends Component>(component: C, callback: (instance: InstanceType<C>) => void, sequence = 0) {
+export function registerDecorator<C extends ClassType>(component: C, callback: (instance: InstanceType<C>, container: Container) => void, sequence = 0) {
     const sequence_callbacks = getMapValue(component_sequence_callbacks, component, () => [])
     const callbacks = getArrayItem(sequence_callbacks, sequence, () => new Set())
 
     callbacks.add(callback)
 }
 
-export function implementDecorator<C extends Component>(component: C, instance: InstanceType<C>) {
+export function implementDecorator<C extends ClassType>(component: C, instance: InstanceType<C>, container: Container) {
     const sequence_callbacks = component_sequence_callbacks.get(component)
     if (!sequence_callbacks) {
         return
     }
     sequence_callbacks.forEach(callbacks => {
         for (const callback of callbacks) {
-            callback(instance)
+            callback(instance, container)
         }
     })
 }
@@ -95,7 +96,7 @@ export function assignObject(obj1: Obj, obj2?: Obj) {
         for (const k in obj2) {
             const value = obj2[k]
             if (k in assigned && assigned[k] !== value) {
-                throw Error(`Object-pattern value of key "${k}" is conflicting`)
+                throw Error(logPrefix + `Object-pattern value of key "${k}" is conflicting`)
             }
             assigned[k] = value
         }

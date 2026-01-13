@@ -1,7 +1,7 @@
 import {Obj, ObjectRouteAction, ObjectRouteItem, StringRouteAction, StringRouteItem} from '../index'
 import {assignObject, joinPath} from './utility'
 
-export const stringRoutes = new Map<string, StringRouteItem>()
+export const stringRoutes = new Set<StringRouteItem>()
 
 export const objectRoutes = new Set<ObjectRouteItem>()
 
@@ -14,10 +14,10 @@ export function makeRoutesFlat() {
 }
 
 function flatStringRoutes() {
-    const fn = (map: Map<string, StringRouteItem | StringRouteAction>, parentPath = '') => {
-        for (const [path, routeItem] of map) {
-            // 可选路径以`{`开头,且前面没有`/`。https://www.npmjs.com/package/path-to-regexp
-            const joinedPath = joinPath(parentPath, path, !path.startsWith('{'))
+    const fn = (set: Set<StringRouteItem | StringRouteAction>, parentPath = '') => {
+        for (const routeItem of set) {
+            // "可选路径"以`{`开头,且前面没有`/`。https://www.npmjs.com/package/path-to-regexp
+            const joinedPath = joinPath(parentPath, routeItem.path, !routeItem.path.startsWith('{'))
             if ('component' in routeItem) {
                 flattedStringRoutes.set('/' + joinedPath, routeItem)
             } else if (routeItem.children) {

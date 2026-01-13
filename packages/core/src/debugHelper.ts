@@ -24,7 +24,7 @@ export function methodWrapper<F extends Fn>(fn: F, target: Function, p: Property
 const isDev = process.env.NODE_ENV === 'development'
 const debug = process.env.DEBUG?.toLowerCase() === 'true' || process.env.DEBUG?.toLowerCase() === 'on'
 
-const logPrefix = '[@canlooks/roost] '
+export const logPrefix = '[@canlooks/roost] '
 const unknownName = '[unknown]'
 
 function printError(target: Function, p: PropertyKey) {

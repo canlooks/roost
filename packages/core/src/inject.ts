@@ -1,11 +1,10 @@
 import {registerDecorator} from './utility'
-import {Component} from '../index'
-import {Container} from './container'
+import {ClassType} from '../index'
 
-export function Inject(component: Component) {
+export function Inject(component: ClassType) {
     return (prototype: Object, propertyKey: PropertyKey) => {
-        registerDecorator(prototype.constructor as Component, instance => {
-            instance[propertyKey] = Container.get(component)
+        registerDecorator(prototype.constructor as ClassType, (instance, container) => {
+            instance[propertyKey] = container.get(component)
         })
     }
 }

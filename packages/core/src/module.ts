@@ -1,8 +1,10 @@
-import {registerComponents} from './utility'
-import {Container} from './container'
+import {registerComponents, registerDecorator} from './utility'
+import {ClassType} from '../index'
 
 export function Module(modules: any) {
-    return () => {
-        registerComponents(modules, comp => Container.get(comp))
+    return (component: ClassType) => {
+        registerDecorator(component, (instance, container) => {
+            registerComponents(modules, comp => container.get(comp))
+        })
     }
 }
