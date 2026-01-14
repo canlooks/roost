@@ -123,3 +123,10 @@ export function isPromise<T>(it: any): it is Promise<T> {
         && typeof it.finally === 'function'
     )
 }
+
+export function isClass(fn: Function | ClassType): fn is ClassType {
+    if (fn.prototype?.constructor !== fn) {
+        return false
+    }
+    return Function.prototype.toString.call(fn).startsWith('class')
+}

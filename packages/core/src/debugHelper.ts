@@ -27,7 +27,7 @@ const debug = process.env.DEBUG?.toLowerCase() === 'true' || process.env.DEBUG?.
 export const logPrefix = '[@canlooks/roost] '
 const unknownName = '[unknown]'
 
-function printError(target: Function, p: PropertyKey) {
+export function printError(target: Function, p: PropertyKey) {
     if (isDev || debug) {
         const targetName = target?.name || target?.constructor?.name || unknownName
         const propertyName = p?.toString() || unknownName

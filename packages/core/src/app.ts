@@ -1,8 +1,8 @@
-import {PluginFunction, PluginHooks, RecurseConstruct} from '../index'
+import {ClassType, PluginHooks, RecurseConstruct} from '../index'
 import {Container} from './container'
-import {makeRoutesFlat} from './route'
-import {registerComponents} from './utility'
-import {allReady} from './initialize'
+import {flattedStringRoutes, makeRoutesFlat} from './route'
+import {registerComponents, registerDecorator} from './utility'
+import {allReady} from './async'
 import {defineInvoke} from './invoke'
 import {logPrefix} from './debugHelper'
 import {Component} from './component'
@@ -12,22 +12,17 @@ export class Roost<T = any> extends Component {
 
     private static usingPlugins = new Set<PluginHooks>()
 
-    static use<O>(plugin: PluginFunction<O>, options?: O): typeof Roost
     static use(plugins: PluginHooks[]): typeof Roost
     static use(plugin: PluginHooks): typeof Roost
-    static use(p: any, options?: any) {
+    static use(p: any) {
         if (this.created) {
             throw Error(logPrefix + '"Roost.use()" must be executed before "Roost.create()"')
         }
 
-        if (typeof p === 'function') {
-            this.usingPlugins.add(p(options))
-        } else {
-            const pluginHooks = Array.isArray(p) ? p : [p]
-            pluginHooks.forEach(hook => {
-                this.usingPlugins.add(hook)
-            })
-        }
+        const pluginHooks = Array.isArray(p) ? p : [p]
+        pluginHooks.forEach(hook => {
+            this.usingPlugins.add(hook)
+        })
 
         return this
     }
@@ -43,9 +38,11 @@ export class Roost<T = any> extends Component {
     }
 
     constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void) {
-        const container = new Container()
-        super(container, defineInvoke(container))
-        const instances = registerComponents(modules, comp => container.get(comp))
+        super()
+        appInstance = this
+        this.container = new Container()
+        this.invoke = defineInvoke(this.container)
+        const instances = registerComponents(modules, comp => this.container.get(comp))
         makeRoutesFlat()
         allReady().then(() => {
             onLoad?.(instances)
@@ -53,9 +50,24 @@ export class Roost<T = any> extends Component {
         })
     }
 
+    routeMap = flattedStringRoutes
+
     private triggerHook<T extends keyof PluginHooks>(name: T, ...args: Parameters<Required<PluginHooks>[T]>) {
         for (const pluginHooks of Roost.usingPlugins) {
             pluginHooks[name]?.(...args as [any])
         }
     }
+}
+
+let appInstance: Roost
+
+export function App(target: Object, propertyKey: PropertyKey): void
+export function App(): PropertyDecorator
+export function App(a?: any, b?: any): any {
+    const fn = (prototype: Object, propertyKey: PropertyKey) => {
+        registerDecorator(prototype.constructor as ClassType, (instance) => {
+            instance[propertyKey] = appInstance
+        })
+    }
+    return a ? fn(a, b) : fn
 }

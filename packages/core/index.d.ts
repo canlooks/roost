@@ -1,11 +1,15 @@
+import {printError} from './src'
+import {Pending} from './src/async'
+
 declare namespace Roost {
+    const logPrefix: string
+
     /**
      * -------------------------------------------------------------------------------------
      * App
      */
 
     class Roost<T = any> extends Component {
-        static use<O>(plugin: PluginFunction<O>, options?: O): typeof Roost
         static use(plugins: PluginHooks[]): typeof Roost
         static use(plugin: PluginHooks): typeof Roost
 
@@ -13,7 +17,11 @@ declare namespace Roost {
         static create<T>(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void): Roost
 
         constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void)
+
+        routeMap: Map<string, StringRouteAction>
     }
+
+    const App: PropertyDecorator & (() => PropertyDecorator)
 
     /**
      * -------------------------------------------------------------------------------------
@@ -29,6 +37,7 @@ declare namespace Roost {
 
     class Container {
         get<C extends ClassType>(component: C): InstanceType<C>
+        set<C extends ClassType>(component: C, instance: InstanceType<C>): void
     }
 
     /**
@@ -52,6 +61,14 @@ declare namespace Roost {
      */
     const Init: typeof Initializer
 
+    /**
+     * Inject a promise to a property, witch resolve on component ready
+     */
+    const Pending: PropertyDecorator & (() => PropertyDecorator)
+
+    /**
+     * Let function execute on component ready.
+     */
     const Ready: MethodDecorator & (() => MethodDecorator)
 
     /**
@@ -60,6 +77,7 @@ declare namespace Roost {
      */
 
     function Inject(component: ClassType): PropertyDecorator
+    function Inject(component: () => Promise<{ default: ClassType }>): PropertyDecorator
 
     /**
      * -------------------------------------------------------------------------------------
@@ -94,12 +112,16 @@ declare namespace Roost {
 
     const Params: ParameterDecorator & (() => ParameterDecorator)
 
+    function getInsertParamsIndex(component: ClassType, propertyKey: PropertyKey): number | null
+
     /**
      * -------------------------------------------------------------------------------------
      * Query
      */
 
     const Query: ParameterDecorator & (() => ParameterDecorator)
+
+    function getInsertQueryIndex(component: ClassType, propertyKey: PropertyKey): number | null
 
     /**
      * -------------------------------------------------------------------------------------
@@ -109,8 +131,6 @@ declare namespace Roost {
     type PluginHooks = {
         onCreated?: (app: Roost) => void
     }
-
-    type PluginFunction<O = any> = (options: O) => PluginHooks
 
     /**
      * -------------------------------------------------------------------------------------
@@ -172,6 +192,10 @@ declare namespace Roost {
     function matchObject(routeObject: Obj, invokeObject: Obj): boolean
 
     function isPromise<T>(it: any): it is Promise<T>
+
+    function isClass(fn: Function | ClassType): fn is ClassType
+
+    function printError(target: Function, p: PropertyKey): void
 }
 
 export = Roost

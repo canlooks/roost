@@ -1,4 +1,4 @@
-import {Container, Obj} from '../index'
+import {Container, Fn, Obj} from '../index'
 import {flattedObjectRoutes, flattedStringRoutes} from './route'
 import {match} from 'path-to-regexp'
 import {matchObject} from './utility'
@@ -18,15 +18,14 @@ export function defineInvoke(container: Container) {
                 if (matchResult) {
                     const instance = container.get(component)
 
-                    const insertParamsIndex = getInsertParamsIndex(component, propertyKey)
-                    if (insertParamsIndex !== null) {
-                        args[insertParamsIndex] = matchResult.params
+                    const insert = (fn: Fn, insertValue: () => any) => {
+                        const index = fn(component, propertyKey)
+                        if (index !== null) {
+                            args[index] = insertValue()
+                        }
                     }
-
-                    const insertQueryIndex = getInsertQueryIndex(component, propertyKey)
-                    if (insertQueryIndex !== null) {
-                        args[insertQueryIndex] = new URLSearchParams(searchParams)
-                    }
+                    insert(getInsertParamsIndex, () => matchResult.params)
+                    insert(getInsertQueryIndex, () => new URLSearchParams(searchParams))
 
                     return instance[propertyKey].apply(instance, args)
                 }

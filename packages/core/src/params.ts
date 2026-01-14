@@ -14,10 +14,6 @@ export function Params(a?: any, b?: any, c?: any): any {
 }
 
 export function getInsertParamsIndex(component: ClassType, propertyKey: PropertyKey) {
-    const propertyKey_index = component_propertyKey_index.get(component)
-    if (propertyKey_index) {
-        const index = propertyKey_index.get(propertyKey)
-        return index ?? null
-    }
-    return null
+    const index = component_propertyKey_index.get(component)?.get(propertyKey)
+    return index ?? null
 }

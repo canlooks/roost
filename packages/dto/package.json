@@ -1,5 +1,5 @@
 {
-  "name": "@canlooks/roost-http",
+  "name": "@canlooks/roost-dto",
   "version": "0.0.1",
   "author": "C.CanLiang <canlooks@gmail.com>",
   "description": "A backend micro service framework",
@@ -39,12 +39,10 @@
     "test:unit": "npx ts-node test/unit.ts"
   },
   "dependencies": {
-    "express": "^5.2.1",
-    "get-port": "^7.1.0",
+    "ajv": "^8.17.1",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3"

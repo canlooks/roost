@@ -3,9 +3,6 @@ import {implementDecorator} from './utility'
 import {defineInvoke} from './invoke'
 
 export class Container {
-    constructor() {
-    }
-
     private map = new Map<ClassType, object>()
 
     get<C extends ClassType>(component: C): InstanceType<C> {
@@ -14,9 +11,15 @@ export class Container {
     }
 
     private createInstance<C extends ClassType>(component: C): InstanceType<C> {
-        const newInstance = new component(this, defineInvoke(this))
-        this.map.set(component, newInstance)
-        implementDecorator(component, newInstance, this)
-        return newInstance
+        const instance = new component()
+        instance.container = this
+        instance.invoke = defineInvoke(this)
+        this.map.set(component, instance)
+        implementDecorator(component, instance, this)
+        return instance
+    }
+
+    set<C extends ClassType>(component: C, instance: InstanceType<C>) {
+        this.map.set(component, instance)
     }
 }
