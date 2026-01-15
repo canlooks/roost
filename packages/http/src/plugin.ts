@@ -1,4 +1,4 @@
-import {logPrefix, PluginHooks} from '@canlooks/roost'
+import {logPrefix, PluginDefinition} from '@canlooks/roost'
 import express, {Request, Response} from 'express'
 import {entryPoints} from './entryPoints'
 import getPort from 'get-port'
@@ -12,9 +12,12 @@ export type HttpPluginOptions = {
     errorHandler?: (error: Error | undefined, req: Request, res: Response) => any
 }
 
-export default function httpPlugin(options: HttpPluginOptions): PluginHooks {
+export const builtInName = Symbol('http')
+
+export default function httpPlugin(options: HttpPluginOptions): PluginDefinition {
     return {
-        onCreated: async roost => {
+        name: builtInName,
+        async onCreated(roost) {
             const app = express()
 
             useMiddleWares(roost, app, options.middleWares)

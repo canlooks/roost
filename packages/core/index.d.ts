@@ -1,4 +1,4 @@
-import {printError} from './src'
+import {getControllerBoundPatterns, printError} from './src'
 import {Pending} from './src/async'
 
 declare namespace Roost {
@@ -87,6 +87,8 @@ declare namespace Roost {
     function Controller(path: string): ClassDecorator
     function Controller(pattern: Obj): ClassDecorator
 
+    function getControllerBoundPatterns(controller: ClassType): Set<string | Obj | undefined> | undefined
+
     /**
      * -------------------------------------------------------------------------------------
      * Action
@@ -130,6 +132,10 @@ declare namespace Roost {
 
     type PluginHooks = {
         onCreated?: (app: Roost) => void
+    }
+
+    interface PluginDefinition extends PluginHooks {
+        name: string | symbol
     }
 
     /**
@@ -185,7 +191,7 @@ declare namespace Roost {
     function getMapValue<K extends object, V>(data: WeakMap<K, V>, key: K): V | undefined
     function getMapValue<K extends object, V>(data: WeakMap<K, V>, key: K, defaultValue: () => V): V
 
-    function joinPath(path1: string, path2: string, separateWithSlash: boolean): string
+    function joinPath(path1?: string, path2?: string, separateWithSlash?: boolean): string
 
     function assignObject(obj1: Obj, obj2?: Obj): Obj
 

@@ -1,4 +1,4 @@
-import {ClassType, PluginHooks, RecurseConstruct} from '../index'
+import {ClassType, PluginDefinition, PluginHooks, RecurseConstruct} from '../index'
 import {Container} from './container'
 import {flattedStringRoutes, makeRoutesFlat} from './route'
 import {registerComponents, registerDecorator} from './utility'
@@ -10,10 +10,10 @@ import {Component} from './component'
 export class Roost<T = any> extends Component {
     private static created = false
 
-    private static usingPlugins = new Set<PluginHooks>()
+    private static usingPlugins = new Set<PluginDefinition>()
 
-    static use(plugins: PluginHooks[]): typeof Roost
-    static use(plugin: PluginHooks): typeof Roost
+    static use(plugins: PluginDefinition[]): typeof Roost
+    static use(plugin: PluginDefinition): typeof Roost
     static use(p: any) {
         if (this.created) {
             throw Error(logPrefix + '"Roost.use()" must be executed before "Roost.create()"')
@@ -54,7 +54,10 @@ export class Roost<T = any> extends Component {
 
     private triggerHook<T extends keyof PluginHooks>(name: T, ...args: Parameters<Required<PluginHooks>[T]>) {
         for (const pluginHooks of Roost.usingPlugins) {
-            pluginHooks[name]?.(...args as [any])
+            const hook = pluginHooks[name]
+            if (typeof hook === 'function') {
+                hook(...args as [any])
+            }
         }
     }
 }

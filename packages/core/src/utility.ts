@@ -72,7 +72,14 @@ function getArrayItem(arr: any[], index: number, defaultValue?: () => any) {
     }
 }
 
-export function joinPath(path1: string, path2: string, separateWithSlash: boolean) {
+export function joinPath(path1?: string, path2?: string, separateWithSlash = true) {
+    if (!path1) {
+        return path2
+    }
+    if (!path2) {
+        return path1
+    }
+
     path1 = dropBothSidesSlash(path1)
     path2 = dropBothSidesSlash(path2)
 
