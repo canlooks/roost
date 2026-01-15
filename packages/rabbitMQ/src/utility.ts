@@ -23,3 +23,7 @@ export function resolveUrl(options: {
 
     return urlStr!
 }
+
+export function generateId(): string {
+
+}

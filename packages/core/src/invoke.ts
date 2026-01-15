@@ -1,4 +1,4 @@
-import {Container, Fn, Obj} from '../index'
+import {ClassType, Container, Obj} from '../index'
 import {flattedObjectRoutes, flattedStringRoutes} from './route'
 import {match} from 'path-to-regexp'
 import {matchObject} from './utility'
@@ -18,7 +18,7 @@ export function defineInvoke(container: Container) {
                 if (matchResult) {
                     const instance = container.get(component)
 
-                    const insert = (fn: Fn, insertValue: () => any) => {
+                    const insert = (fn: (component: ClassType, propertyKey: PropertyKey) => number | null, insertValue: () => any) => {
                         const index = fn(component, propertyKey)
                         if (index !== null) {
                             args[index] = insertValue()

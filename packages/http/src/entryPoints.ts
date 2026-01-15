@@ -1,4 +1,4 @@
-import {Fn, getInsertParamsIndex, getInsertQueryIndex, printError, Roost} from '@canlooks/roost'
+import {ClassType, getInsertParamsIndex, getInsertQueryIndex, printError, Roost} from '@canlooks/roost'
 import {Express} from 'express'
 import {component_propertyKey_method} from './actions'
 import {getInsertReqIndex} from './request'
@@ -14,7 +14,7 @@ export function entryPoints(roost: Roost, app: Express, options: HttpPluginOptio
                 const instance = roost.container.get(component)
                 const args = [req.body]
 
-                const insert = (fn: Fn, insertValue: any) => {
+                const insert = (fn: (component: ClassType, propertyKey: PropertyKey) => number | null, insertValue: any) => {
                     const index = fn(component, propertyKey)
                     if (index !== null) {
                         args[index] = insertValue

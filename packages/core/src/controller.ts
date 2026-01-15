@@ -10,9 +10,9 @@ export function getControllerBoundPatterns(controller: ClassType) {
 
 export function Controller(path?: string): ClassDecorator
 export function Controller(pattern?: Obj): ClassDecorator
-export function Controller(pattern?: string | Obj) {
+export function Controller(a?: string | Obj) {
     return (component: ClassType) => {
-        getMapValue(component_patterns, component, () => new Set()).add(pattern)
+        getMapValue(component_patterns, component, () => new Set()).add(a)
     }
 }
 
