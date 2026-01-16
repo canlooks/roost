@@ -13,7 +13,7 @@ const builtInName = Symbol('amqp')
 export default function amqpPlugin(options: AmqpPluginOptions): PluginDefinition {
     return {
         name: builtInName,
-        async onCreated(roost) {
+        async onCreated() {
             await createConnection(options)
         }
     }

@@ -1,11 +1,11 @@
 import {ClassType, PluginDefinition, PluginHooks, RecurseConstruct} from '../index'
 import {Container} from './container'
-import {flattedStringRoutes, makeRoutesFlat} from './route'
 import {registerComponents, registerDecorator} from './utility'
 import {allReady} from './async'
 import {defineInvoke} from './invoke'
 import {logPrefix} from './debugHelper'
 import {Component} from './component'
+import {objectRoutes, stringRoutes} from './route'
 
 export class Roost<T = any> extends Component {
     private static created = false
@@ -40,17 +40,17 @@ export class Roost<T = any> extends Component {
     constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void) {
         super()
         appInstance = this
-        this.container = new Container()
+        this.container = new Container(this)
         this.invoke = defineInvoke(this.container)
         const instances = registerComponents(modules, comp => this.container.get(comp))
-        makeRoutesFlat()
         allReady().then(() => {
             onLoad?.(instances)
             this.triggerHook('onCreated', this)
         })
     }
 
-    routeMap = flattedStringRoutes
+    routeMap = stringRoutes
+    patternMap = objectRoutes
 
     private triggerHook<T extends keyof PluginHooks>(name: T, ...args: Parameters<Required<PluginHooks>[T]>) {
         for (const pluginHooks of Roost.usingPlugins) {

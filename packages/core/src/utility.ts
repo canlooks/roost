@@ -1,4 +1,4 @@
-import {ClassType, Container, Obj, RecurseConstruct} from '../index'
+import {ClassType, Obj, RecurseConstruct, Roost} from '../index'
 import {logPrefix} from './debugHelper'
 
 export function registerComponents<T extends any[]>(components: [...T], register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
@@ -23,23 +23,23 @@ export function registerComponents(components: any, register: <C extends ClassTy
     return components
 }
 
-const component_sequence_callbacks = new WeakMap<ClassType, Set<(instance: any, container: Container) => void>[]>()
+const component_sequence_callbacks = new WeakMap<ClassType, Set<(instance: any, app: Roost) => void>[]>()
 
-export function registerDecorator<C extends ClassType>(component: C, callback: (instance: InstanceType<C>, container: Container) => void, sequence = 0) {
+export function registerDecorator<C extends ClassType>(component: C, callback: (instance: InstanceType<C>, app: Roost) => void, sequence = 0) {
     const sequence_callbacks = getMapValue(component_sequence_callbacks, component, () => [])
     const callbacks = getArrayItem(sequence_callbacks, sequence, () => new Set())
 
     callbacks.add(callback)
 }
 
-export function implementDecorator<C extends ClassType>(component: C, instance: InstanceType<C>, container: Container) {
+export function implementDecorator<C extends ClassType>(component: C, instance: InstanceType<C>, app: Roost) {
     const sequence_callbacks = component_sequence_callbacks.get(component)
     if (!sequence_callbacks) {
         return
     }
     sequence_callbacks.forEach(callbacks => {
         for (const callback of callbacks) {
-            callback(instance, container)
+            callback(instance, app)
         }
     })
 }
@@ -97,7 +97,7 @@ export function joinPath(path1?: string, path2?: string, separateWithSlash = tru
     }
 }
 
-export function assignObject(obj1: Obj, obj2?: Obj) {
+export function assignObject(obj1?: Obj, obj2?: Obj) {
     const assigned = {...obj1}
     if (obj2) {
         for (const k in obj2) {

@@ -25,15 +25,40 @@ export function Consume(pattern?: Obj, assertOptions?: Options.AssertQueue): Met
 export function Consume(a?: string | Obj, assertOptions?: Options.AssertQueue) {
     return (prototype: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor) => {
         const component = prototype.constructor as ClassType
+        const currentQueue = typeof a === 'object' || !a ? generateId() : a
 
-        // invoker
-        const property_invoker = getMapValue(component_property_invoker, component, () => new Map())
-        getMapValue(property_invoker, propertyKey, () => (...args: any[]) => {
+        // define string routes anyway
+        registerDecorator(component, instance => {
+            eachControllerPatterns(component, async pattern => {
+                if (typeof pattern !== 'object') {
+                    const queue = joinPath(joinPath(Connection.serviceName, pattern), currentQueue)
+
+                    const {listenChannel} = Connection
+                    await listenChannel.assertQueue(queue, assertOptions)
+                    await listenChannel.consume(queue, message => {
+                        messageCallbackWrapper(listenChannel, message, content => {
+                            return instance[propertyKey].call(instance, content)
+                        })
+                    })
+                }
+            })
+        }, 1)
+        // define object routes only pattern is object
+        if (typeof a === 'object') {
+            Action(a)(prototype, propertyKey, descriptor)
+            // TODO object pattern 应在全局挂载队列，使用roost的invoke分配方法，且无需考虑rpc
+            // registerDecorator(component, (instance, roost) => {
+            //     for (const [pattern, {component, propertyKey}] of roost.patternMap) {
+            //
+            //     }
+            // }, 2)
+        }
+
+        // define invoker
+        const invoker = (...args: any[]) => {
             return new Promise((resolve, reject) => {
                 eachControllerPatterns(component, async pattern => {
-                    if (typeof pattern === 'object') {
-
-                    } else if (typeof a !== 'object') {
+                    if (typeof pattern !== 'object') {
                         const {sendChannel, replyQueue} = Connection
                         const correlationId = generateId()
                         const {consumerTag} = await sendChannel.consume(replyQueue, message => {
@@ -47,40 +72,20 @@ export function Consume(a?: string | Obj, assertOptions?: Options.AssertQueue) {
                                 sendChannel.cancel(consumerTag)
                             }
                         })
-                        const sendQueue = joinPath(joinPath(Connection.serviceName, pattern), a || generateId())
-                        sendChannel.sendToQueue(sendQueue, Buffer.from(JSON.stringify(args)), {
+                        const queue = joinPath(joinPath(Connection.serviceName, pattern), currentQueue)
+
+                        sendChannel.sendToQueue(queue, Buffer.from(JSON.stringify(args)), {
                             replyTo: replyQueue,
                             correlationId
                         })
+                        return true
                     }
-                    return true
                 })
             })
-        })
-
-        // listener
-        if (typeof a === 'object') {
-            Action(a)(prototype, propertyKey, descriptor)
-            // TODO 考虑如何支持obj格式pattern
-        } else {
-            registerDecorator(component, instance => {
-                eachControllerPatterns(component, async pattern => {
-                    if (typeof pattern === 'object') {
-                        return
-                    }
-                    const queue = joinPath(joinPath(Connection.serviceName, pattern), a || generateId())
-
-                    const {listenChannel} = Connection
-                    await listenChannel.assertQueue(queue, assertOptions)
-                    await listenChannel.consume(queue, message => {
-                        messageCallbackWrapper(listenChannel, message, content => {
-                            return instance[propertyKey].call(instance, content)
-                        })
-                    })
-                })
-            }, 1)
-
-            descriptor.value = methodWrapper(descriptor.value, component, propertyKey)
         }
+        const property_invoker = getMapValue(component_property_invoker, component, () => new Map())
+        getMapValue(property_invoker, propertyKey, () => invoker)
+
+        descriptor.value = methodWrapper(descriptor.value, component, propertyKey)
     }
 }

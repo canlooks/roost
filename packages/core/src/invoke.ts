@@ -1,5 +1,5 @@
 import {ClassType, Container, Obj} from '../index'
-import {flattedObjectRoutes, flattedStringRoutes} from './route'
+import {objectRoutes, stringRoutes} from './route'
 import {match} from 'path-to-regexp'
 import {matchObject} from './utility'
 import {getInsertParamsIndex} from './params'
@@ -13,7 +13,7 @@ export function defineInvoke(container: Container) {
     function invoke(pattern: string | Obj, ...args: any) {
         if (typeof pattern === 'string') {
             const [path, searchParams] = pattern.split('?')
-            for (const [routePath, {component, propertyKey}] of flattedStringRoutes) {
+            for (const [routePath, {component, propertyKey}] of stringRoutes) {
                 const matchResult = match(routePath)(path)
                 if (matchResult) {
                     const instance = container.get(component)
@@ -33,7 +33,7 @@ export function defineInvoke(container: Container) {
             throw Error(`path "${pattern}" not found`)
         }
 
-        for (const [routeObject, {component, propertyKey}] of flattedObjectRoutes) {
+        for (const [routeObject, {component, propertyKey}] of objectRoutes) {
             if (matchObject(routeObject, pattern)) {
                 const instance = container.get(component)
                 return instance[propertyKey].call(instance, pattern, ...args)

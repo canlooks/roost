@@ -1,7 +1,8 @@
-import {registerDecorator} from './utility'
-import {ClassType, Obj, ObjectRouteAction, StringRouteAction} from '../index'
-import {component_objectRouteItem, component_stringRouteItem, implementController} from './controller'
+import {assignObject, joinPath, registerDecorator} from './utility'
+import {ClassType, Obj} from '../index'
+import {eachControllerPatterns} from './controller'
 import {methodWrapper} from './debugHelper'
+import {objectRoutes, stringRoutes} from './route'
 
 export function Action(path: string): MethodDecorator
 export function Action(pattern: Obj): MethodDecorator
@@ -10,28 +11,28 @@ export function Action(a: string | Obj) {
         const component = prototype.constructor as ClassType
 
         registerDecorator(component, () => {
-            if (typeof a === 'string') {
-                let routeItem = component_stringRouteItem.get(component)
-                if (!routeItem) {
-                    implementController(component)
-                    routeItem = component_stringRouteItem.get(component)!
-                }
-                const subRouteItem: StringRouteAction = {
-                    path: a,
-                    component,
-                    propertyKey
-                }
-                routeItem.children ||= new Set()
-                routeItem.children.add(subRouteItem)
+            if (typeof a === 'object') {
+                eachControllerPatterns(component, pattern => {
+                    if (typeof pattern !== 'string') {
+                        const obj = assignObject(pattern, a)
+                        objectRoutes.set(obj, {
+                            pattern: obj,
+                            component,
+                            propertyKey
+                        })
+                    }
+                })
             } else {
-                let routeItem = component_objectRouteItem.get(component)
-                if (!routeItem) {
-                    implementController(component)
-                    routeItem = component_objectRouteItem.get(component)!
-                }
-                const subRouteItem: ObjectRouteAction = {pattern: a, component, propertyKey}
-                routeItem.children ||= new Set()
-                routeItem.children.add(subRouteItem)
+                eachControllerPatterns(component, pattern => {
+                    if (typeof pattern !== 'object') {
+                        const path = joinPath(pattern, a)
+                        stringRoutes.set(path!, {
+                            path,
+                            component,
+                            propertyKey
+                        })
+                    }
+                })
             }
         }, 1)
 

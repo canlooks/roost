@@ -3,8 +3,8 @@ import {ClassType} from '../index'
 
 export function Module(modules: any) {
     return (component: ClassType) => {
-        registerDecorator(component, (instance, container) => {
-            registerComponents(modules, comp => container.get(comp))
+        registerDecorator(component, (instance, app) => {
+            registerComponents(modules, comp => app.container.get(comp))
         })
     }
 }

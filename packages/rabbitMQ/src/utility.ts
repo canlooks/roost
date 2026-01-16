@@ -1,4 +1,5 @@
 import {Channel, ConsumeMessage} from 'amqplib'
+import {Obj} from '@canlooks/roost'
 
 export function resolveUrl(options: {
     username?: string
@@ -30,6 +31,7 @@ export function generateId() {
     return crypto.randomUUID()
 }
 
+
 export type Reply<T> = {
     type: 'success' | 'error'
     value: T
@@ -39,45 +41,33 @@ export async function messageCallbackWrapper(channel: Channel, message: ConsumeM
     if (!message) {
         return
     }
-    let content = message.content.toString()
-    try {
-        content = JSON.parse(content)
-    } catch (e) {
-    }
-
-    if (message.properties.replyTo) {
-        let sendContent: Reply<any>
-        try {
-            sendContent = {
-                type: 'success',
-                value: await callback(content)
-            }
-        } catch (e) {
-            sendContent = {
-                type: 'error',
-                value: e
-            }
-        }
-        channel.sendToQueue(
-            message.properties.replyTo,
-            Buffer.from(JSON.stringify(sendContent)),
-            {correlationId: message.properties.correlationId}
-        )
-    } else {
-        try {
-            callback(content)
-        } catch (e) {
-        }
-    }
     channel.ack(message)
+    const content = getContentInMessage(message)
+    if (message.properties.replyTo) {
+        callback(content)
+        return
+    }
+    let replyContent: Reply<any>
+    try {
+        replyContent = {
+            type: 'success',
+            value: await callback(content)
+        }
+    } catch (e) {
+        replyContent = {
+            type: 'error',
+            value: e
+        }
+    }
+    channel.sendToQueue(
+        message.properties.replyTo,
+        Buffer.from(JSON.stringify(replyContent)),
+        {correlationId: message.properties.correlationId}
+    )
 }
 
 export function destructReply<T>(message: ConsumeMessage) {
-    let content: string | Reply<T> = message.content.toString()
-    try {
-        content = JSON.parse(content)
-    } catch (e) {
-    }
+    const content = getContentInMessage(message) as Reply<T>
     if (typeof content === 'string') {
         return content
     }
@@ -86,4 +76,13 @@ export function destructReply<T>(message: ConsumeMessage) {
         throw content.value
     }
     return content.value
+}
+
+export function getContentInMessage(message: ConsumeMessage) {
+    let content: string | Obj = message.content.toString()
+    try {
+        content = JSON.parse(content)
+    } catch (e) {
+    }
+    return content
 }

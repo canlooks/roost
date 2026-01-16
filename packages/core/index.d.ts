@@ -14,6 +14,7 @@ declare namespace Roost {
         constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void)
 
         routeMap: Map<string, StringRouteAction>
+        patternMap: Map<Obj, ObjectRouteAction>
     }
 
     const App: PropertyDecorator & (() => PropertyDecorator)
@@ -153,20 +154,12 @@ declare namespace Roost {
         propertyKey: PropertyKey
     }
 
-    type StringRouteItem = {
-        path: string
-        children?: Set<StringRouteItem | StringRouteAction>
+    interface StringRouteAction extends ActionItem {
+        path?: string
     }
 
-    interface StringRouteAction extends StringRouteItem, ActionItem {
-    }
-
-    type ObjectRouteItem = {
-        pattern?: Obj
-        children?: Set<ObjectRouteItem | ObjectRouteAction>
-    }
-
-    interface ObjectRouteAction extends ObjectRouteItem, ActionItem {
+    interface ObjectRouteAction extends ActionItem {
+        pattern: Obj
     }
 
     /**
@@ -177,9 +170,9 @@ declare namespace Roost {
     function registerComponents<T extends any[]>(components: [...T], register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
     function registerComponents<T>(components: T, register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
 
-    function registerDecorator<C extends ClassType>(component: C, callback: (instance: InstanceType<C>, container: Container) => void, sequence?: number): void
+    function registerDecorator<C extends ClassType>(component: C, callback: (instance: InstanceType<C>, app: Roost) => void, sequence?: number): void
 
-    function implementDecorator<C extends ClassType>(component: C, instance: InstanceType<C>, container: Container): void
+    function implementDecorator<C extends ClassType>(component: C, instance: InstanceType<C>, app: Roost): void
 
     function getMapValue<K, V>(data: Map<K, V>, key: K): V | undefined
     function getMapValue<K, V>(data: Map<K, V>, key: K, defaultValue: () => V): V
