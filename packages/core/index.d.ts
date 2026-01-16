@@ -1,9 +1,4 @@
-import {getControllerBoundPatterns, printError} from './src'
-import {Pending} from './src/async'
-
 declare namespace Roost {
-    const logPrefix: string
-
     /**
      * -------------------------------------------------------------------------------------
      * App
@@ -87,7 +82,7 @@ declare namespace Roost {
     function Controller(path: string): ClassDecorator
     function Controller(pattern: Obj): ClassDecorator
 
-    function getControllerBoundPatterns(controller: ClassType): Set<string | Obj | undefined> | undefined
+    function eachControllerPatterns(controller: ClassType, callback: (pattern: string | Obj | undefined) => any): void
 
     /**
      * -------------------------------------------------------------------------------------
@@ -200,6 +195,10 @@ declare namespace Roost {
     function isPromise<T>(it: any): it is Promise<T>
 
     function isClass(fn: Function | ClassType): fn is ClassType
+
+    const logPrefix: string
+
+    function methodWrapper<F extends Fn>(fn: F, target: Function, p: PropertyKey): F
 
     function printError(target: Function, p: PropertyKey): void
 }

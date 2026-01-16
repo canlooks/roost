@@ -4,8 +4,17 @@ import {objectRoutes, stringRoutes} from './route'
 
 export const component_patterns = new WeakMap<ClassType, Set<string | Obj | undefined>>()
 
-export function getControllerBoundPatterns(controller: ClassType) {
-    return component_patterns.get(controller)
+export function eachControllerPatterns(controller: ClassType, callback: (pattern: string | Obj | undefined) => any) {
+    const patterns = component_patterns.get(controller)
+    if (patterns) {
+        for (const pattern of patterns) {
+            if (callback(pattern)) {
+                break
+            }
+        }
+    } else {
+        callback(void 0)
+    }
 }
 
 export function Controller(path?: string): ClassDecorator
@@ -20,8 +29,8 @@ export const component_stringRouteItem = new WeakMap<ClassType, StringRouteItem>
 
 export const component_objectRouteItem = new WeakMap<ClassType, ObjectRouteItem>()
 
-export function implementController(component: ClassType, defaultPattern: string | Obj) {
-    const fn = (pattern: string | Obj | undefined) => {
+export function implementController(component: ClassType) {
+    eachControllerPatterns(component, pattern => {
         const path = typeof pattern === 'string' ? pattern : ''
         const obj = typeof pattern === 'object' && pattern ? pattern : {}
 
@@ -32,14 +41,5 @@ export function implementController(component: ClassType, defaultPattern: string
         const objectRouteItem: ObjectRouteItem = {pattern: obj}
         objectRoutes.add(objectRouteItem)
         component_objectRouteItem.set(component, objectRouteItem)
-    }
-
-    const patterns = getControllerBoundPatterns(component)
-    if (patterns) {
-        for (const pattern of patterns) {
-            fn(pattern)
-        }
-    } else {
-        fn(defaultPattern)
-    }
+    })
 }

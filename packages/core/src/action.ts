@@ -13,7 +13,7 @@ export function Action(a: string | Obj) {
             if (typeof a === 'string') {
                 let routeItem = component_stringRouteItem.get(component)
                 if (!routeItem) {
-                    implementController(component, '')
+                    implementController(component)
                     routeItem = component_stringRouteItem.get(component)!
                 }
                 const subRouteItem: StringRouteAction = {
@@ -26,7 +26,7 @@ export function Action(a: string | Obj) {
             } else {
                 let routeItem = component_objectRouteItem.get(component)
                 if (!routeItem) {
-                    implementController(component, {})
+                    implementController(component)
                     routeItem = component_objectRouteItem.get(component)!
                 }
                 const subRouteItem: ObjectRouteAction = {pattern: a, component, propertyKey}
