@@ -1,5 +1,5 @@
-import {ArrayOptions, DTOOptions, NumberOptions, SchemaItem, ValidateOptions} from '../index'
-import Ajv, {Options as AjvOptions, ValidateFunction} from 'ajv'
+import {ArrayOptions, DTOOptions, NumberOptions, SchemaItem, VerifyOptions} from '../index'
+import Ajv, {Options as AjvOptions, VerifyFunction} from 'ajv'
 import {ClassType, getMapValue, logPrefix, printError, registerDecorator} from '@canlooks/roost'
 import {generateJSONSchemaRoot, mergeSchema, schemaItemToJSONSchema} from './utility'
 import {Exception} from '@canlooks/roost-http'
@@ -166,9 +166,9 @@ export function Const(value: any) {
  * 参数修饰器，执行校验
  */
 
-const DTOPrototype_validateFunction = new WeakMap<object, ValidateFunction>()
+const DTOPrototype_validateFunction = new WeakMap<object, VerifyFunction>()
 
-export function Validate(dto: ClassType, options?: ValidateOptions) {
+export function Verify(dto: ClassType, options?: VerifyOptions) {
     return (prototype: Object, property: PropertyKey, index: number) => {
         registerDecorator(prototype.constructor as ClassType, instance => {
             const oldMethod = instance[property]
@@ -204,6 +204,6 @@ export function Validate(dto: ClassType, options?: ValidateOptions) {
     }
 }
 
-Validate.Optional = (dto: ClassType) => Validate(dto, {required: false})
+Verify.Optional = (dto: ClassType) => Verify(dto, {required: false})
 
-Validate.Nullable = (dto: ClassType) => Validate(dto, {nullable: true})
+Verify.Nullable = (dto: ClassType) => Verify(dto, {nullable: true})

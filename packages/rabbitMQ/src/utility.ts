@@ -30,14 +30,9 @@ export function generateId() {
     return crypto.randomUUID()
 }
 
-export type SuccessReply<T> = {
-    type: 'success'
-    data: T
-}
-
-export type ErrorReply = {
-    type: 'error'
-    error: any
+export type Reply<T> = {
+    type: 'success' | 'error'
+    value: T
 }
 
 export async function messageCallbackWrapper(channel: Channel, message: ConsumeMessage | null, callback: (content: any) => any) {
@@ -51,16 +46,16 @@ export async function messageCallbackWrapper(channel: Channel, message: ConsumeM
     }
 
     if (message.properties.replyTo) {
-        let sendContent: SuccessReply<any> | ErrorReply
+        let sendContent: Reply<any>
         try {
             sendContent = {
                 type: 'success',
-                data: await callback(content)
+                value: await callback(content)
             }
-        } catch (error) {
+        } catch (e) {
             sendContent = {
                 type: 'error',
-                error
+                value: e
             }
         }
         channel.sendToQueue(
@@ -75,4 +70,20 @@ export async function messageCallbackWrapper(channel: Channel, message: ConsumeM
         }
     }
     channel.ack(message)
+}
+
+export function destructReply<T>(message: ConsumeMessage) {
+    let content: string | Reply<T> = message.content.toString()
+    try {
+        content = JSON.parse(content)
+    } catch (e) {
+    }
+    if (typeof content === 'string') {
+        return content
+    }
+
+    if (content.type === 'error') {
+        throw content.value
+    }
+    return content.value
 }

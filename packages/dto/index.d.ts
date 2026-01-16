@@ -98,7 +98,7 @@ declare namespace DTOPlugin {
     /** 声明该属性的值是唯一的，@example @Const('foo')，则该属性只能为"foo" */
     function Const(value: any): PropertyDecorator
 
-    type ValidateOptions = {
+    type VerifyOptions = {
         /** 是否允许为null，@default false */
         nullable?: boolean
         /** 是否禁止为undefined，@default true */
@@ -109,11 +109,11 @@ declare namespace DTOPlugin {
      * 参数修饰器，被修饰的参数会经过dto类校验
      * @param dto 
      */
-    const Validate: {
-        (dto: ClassType, options?: ValidateOptions): ParameterDecorator
-        /** @alias Validate Validate(dto, { required: false }) */
+    const Verify: {
+        (dto: ClassType, options?: VerifyOptions): ParameterDecorator
+        /** @alias Verify Verify(dto, { required: false }) */
         Optional(dto: ClassType): ParameterDecorator
-        /** @alias Validate Validate(dto, { nullable: true }) */
+        /** @alias Verify Verify(dto, { nullable: true }) */
         Nullable(dto: ClassType): ParameterDecorator
     }
 }
