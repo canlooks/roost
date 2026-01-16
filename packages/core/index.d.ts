@@ -127,7 +127,7 @@ declare namespace Roost {
      */
 
     type PluginHooks = {
-        onCreated?: (app: Roost) => void
+        onCreate?: (app: Roost) => void
     }
 
     interface PluginDefinition extends PluginHooks {

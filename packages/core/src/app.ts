@@ -1,7 +1,7 @@
 import {ClassType, PluginDefinition, PluginHooks, RecurseConstruct} from '../index'
 import {Container} from './container'
 import {registerComponents, registerDecorator} from './utility'
-import {allReady} from './async'
+import {allReady, globalPendingArr} from './async'
 import {defineInvoke} from './invoke'
 import {logPrefix} from './debugHelper'
 import {Component} from './component'
@@ -37,28 +37,34 @@ export class Roost<T = any> extends Component {
         return new this(modules, onLoad)
     }
 
+    routeMap = stringRoutes
+    patternMap = objectRoutes
+
     constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void) {
         super()
         appInstance = this
         this.container = new Container(this)
         this.invoke = defineInvoke(this.container)
+
         const instances = registerComponents(modules, comp => this.container.get(comp))
+
+        const pendingArr = this.triggerHook('onCreate', this)
+        globalPendingArr.push(...pendingArr)
+
         allReady().then(() => {
             onLoad?.(instances)
-            this.triggerHook('onCreated', this)
         })
     }
 
-    routeMap = stringRoutes
-    patternMap = objectRoutes
-
     private triggerHook<T extends keyof PluginHooks>(name: T, ...args: Parameters<Required<PluginHooks>[T]>) {
+        const pendingArr = []
         for (const pluginHooks of Roost.usingPlugins) {
             const hook = pluginHooks[name]
             if (typeof hook === 'function') {
-                hook(...args as [any])
+                pendingArr.push(hook(...args as [any]))
             }
         }
+        return pendingArr
     }
 }
 

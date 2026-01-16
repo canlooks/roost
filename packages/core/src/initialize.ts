@@ -10,7 +10,7 @@ export function Initializer(a?: any, b?: any, c?: any): any {
         const component = prototype.constructor as ClassType
 
         registerDecorator(component, instance => {
-            pushPendingItem(component, instance, instance[propertyKey]())
+            pushPendingItem(instance, instance[propertyKey]())
         }, 2)
 
         descriptor.value = methodWrapper(descriptor.value, component, propertyKey)

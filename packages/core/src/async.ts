@@ -1,12 +1,12 @@
 import {ClassType} from '../index'
 import {getMapValue, registerDecorator} from './utility'
 
-export const component_pendingArr = new Map<ClassType, any[]>
+export const globalPendingArr: any = []
 
 export const instance_pendingArr = new WeakMap<object, any[]>
 
-export function pushPendingItem<C extends ClassType>(component: C, instance: InstanceType<C>, value: any) {
-    getMapValue(component_pendingArr, component, () => []).push(value)
+export function pushPendingItem(instance: object, value: any) {
+    globalPendingArr.push(value)
     getMapValue(instance_pendingArr, instance, () => []).push(value)
 }
 
@@ -42,10 +42,7 @@ export function Ready(a?: any, b?: any, c?: any): any {
 }
 
 export function allReady() {
-    const promises = []
-    for (const [, pendingArr] of component_pendingArr) {
-        promises.push(...pendingArr)
-    }
-    component_pendingArr.clear()
-    return Promise.all(promises)
+    const promise = Promise.all(globalPendingArr)
+    globalPendingArr.length = 0
+    return promise
 }

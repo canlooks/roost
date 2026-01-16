@@ -1,21 +1,34 @@
 import amqp, {Channel, ChannelModel, Options} from 'amqplib'
-import {destructReply, generateId, messageCallbackWrapper, resolveUrl} from './utility'
+import {generateId, messageCallbackWrapper, replyHandler, resolveUrl} from './utility'
 import {AmqpPluginOptions} from './plugin'
-import {Action, ClassType, eachControllerPatterns, Fn, getMapValue, joinPath, methodWrapper, Obj, registerDecorator} from '@canlooks/roost'
+import {Action, ClassType, eachControllerPatterns, Fn, getMapValue, joinPath, methodWrapper, Obj, registerDecorator, Roost} from '@canlooks/roost'
+import {globalQueue} from './globalQueue'
 
 class Connection {
     static serviceName: string
     static connection: ChannelModel
     static listenChannel: Channel
     static sendChannel: Channel
-    static replyQueue: string
+    static ready: Promise<void>
 }
 
-export async function createConnection(options: AmqpPluginOptions) {
-    Connection.serviceName = options.name
-    Connection.connection = await amqp.connect(resolveUrl(options))
-    Connection.listenChannel = await Connection.connection.createChannel()
-    Connection.sendChannel = await Connection.connection.createChannel()
+export function createConnection(roost: Roost, options: AmqpPluginOptions) {
+    Connection.ready = new Promise(async resolve => {
+        Connection.serviceName = options.name
+        Connection.connection = await amqp.connect(resolveUrl(options))
+
+        const [listenChannel, sendChannel] = await Promise.all([
+            Connection.connection.createChannel(),
+            Connection.connection.createChannel()
+        ])
+        Connection.listenChannel = listenChannel
+        Connection.sendChannel = sendChannel
+
+        await globalQueue(roost, Connection)
+
+        resolve()
+    })
+
 }
 
 const component_property_invoker = new WeakMap<ClassType, Map<PropertyKey, Fn<Promise<any>>>>()
@@ -28,7 +41,8 @@ export function Consume(a?: string | Obj, assertOptions?: Options.AssertQueue) {
         const currentQueue = typeof a === 'object' || !a ? generateId() : a
 
         // define string routes anyway
-        registerDecorator(component, instance => {
+        registerDecorator(component, async instance => {
+            await Connection.ready
             eachControllerPatterns(component, async pattern => {
                 if (typeof pattern !== 'object') {
                     const queue = joinPath(joinPath(Connection.serviceName, pattern), currentQueue)
@@ -46,12 +60,6 @@ export function Consume(a?: string | Obj, assertOptions?: Options.AssertQueue) {
         // define object routes only pattern is object
         if (typeof a === 'object') {
             Action(a)(prototype, propertyKey, descriptor)
-            // TODO object pattern 应在全局挂载队列，使用roost的invoke分配方法，且无需考虑rpc
-            // registerDecorator(component, (instance, roost) => {
-            //     for (const [pattern, {component, propertyKey}] of roost.patternMap) {
-            //
-            //     }
-            // }, 2)
         }
 
         // define invoker
@@ -59,21 +67,10 @@ export function Consume(a?: string | Obj, assertOptions?: Options.AssertQueue) {
             return new Promise((resolve, reject) => {
                 eachControllerPatterns(component, async pattern => {
                     if (typeof pattern !== 'object') {
-                        const {sendChannel, replyQueue} = Connection
-                        const correlationId = generateId()
-                        const {consumerTag} = await sendChannel.consume(replyQueue, message => {
-                            if (message && message.properties.correlationId === correlationId) {
-                                try {
-                                    resolve(destructReply(message))
-                                } catch (e) {
-                                    reject(e)
-                                }
-                                sendChannel.ack(message)
-                                sendChannel.cancel(consumerTag)
-                            }
-                        })
-                        const queue = joinPath(joinPath(Connection.serviceName, pattern), currentQueue)
+                        const {sendChannel} = Connection
+                        const {queue: replyQueue, correlationId} = await replyHandler(sendChannel, resolve, reject)
 
+                        const queue = joinPath(joinPath(Connection.serviceName, pattern), currentQueue)
                         sendChannel.sendToQueue(queue, Buffer.from(JSON.stringify(args)), {
                             replyTo: replyQueue,
                             correlationId

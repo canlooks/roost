@@ -17,7 +17,7 @@ export const builtInName = Symbol('http')
 export default function httpPlugin(options: HttpPluginOptions): PluginDefinition {
     return {
         name: builtInName,
-        async onCreated(roost) {
+        async onCreate(roost) {
             const app = express()
 
             useMiddleWares(roost, app, options.middleWares)

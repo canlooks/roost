@@ -14,7 +14,7 @@ export function Inject(a: ClassType | (() => Promise<{ default: ClassType }>)) {
                 const pending = a().then(({default: injectTarget}) => {
                     instance[propertyKey] = app.container.get(injectTarget)
                 })
-                pushPendingItem(component, instance, pending)
+                pushPendingItem(instance, pending)
             }
         })
     }
