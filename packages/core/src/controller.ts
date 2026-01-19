@@ -5,14 +5,14 @@ export const component_patterns = new WeakMap<ClassType, Set<string | Obj | unde
 
 export function eachControllerPatterns(controller: ClassType, callback: (pattern: string | Obj | undefined) => any) {
     const patterns = component_patterns.get(controller)
-    if (patterns) {
-        for (const pattern of patterns) {
-            if (callback(pattern)) {
-                break
-            }
-        }
-    } else {
+    if (!patterns) {
         callback(void 0)
+        return
+    }
+    for (const pattern of patterns) {
+        if (callback(pattern)) {
+            break
+        }
     }
 }
 

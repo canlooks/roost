@@ -1,5 +1,5 @@
 import {ArrayOptions, DTOOptions, NumberOptions, SchemaItem, VerifyOptions} from '../index'
-import Ajv, {Options as AjvOptions, VerifyFunction} from 'ajv'
+import Ajv, {Options as AjvOptions, ValidateFunction} from 'ajv'
 import {ClassType, getMapValue, logPrefix, printError, registerDecorator} from '@canlooks/roost'
 import {generateJSONSchemaRoot, mergeSchema, schemaItemToJSONSchema} from './utility'
 import {Exception} from '@canlooks/roost-http'
@@ -41,7 +41,7 @@ export function DTO(a?: any): any {
             Object.assign(schema, options)
         }
     }
-    return typeof a === 'function' ? fn()(a) : fn(a)
+    typeof a === 'function' ? fn()(a) : fn(a)
 }
 
 DTO.Obj = Obj
@@ -79,7 +79,7 @@ export function Num(a?: any, b?: any): any {
     const fn = (options?: NumberOptions) => (prototype: Object, property: PropertyKey) => {
         mergeSchema(prototype, property, options, 'number')
     }
-    return typeof b !== 'undefined' ? fn()(a, b) : fn(a)
+    typeof b !== 'undefined' ? fn()(a, b) : fn(a)
 }
 
 export function Int(prototype: Object, property: PropertyKey): void
@@ -88,7 +88,7 @@ export function Int(a?: any, b?: any): any {
     const fn = (options?: NumberOptions) => (prototype: Object, property: PropertyKey) => {
         mergeSchema(prototype, property, options, 'interger')
     }
-    return typeof b !== 'undefined' ? fn()(a, b) : fn(a)
+    typeof b !== 'undefined' ? fn()(a, b) : fn(a)
 }
 
 export function Str(prototype: Object, property: PropertyKey): void
@@ -97,7 +97,7 @@ export function Str(a?: any, b?: any): any {
     const fn = (options?: NumberOptions) => (prototype: Object, property: PropertyKey) => {
         mergeSchema(prototype, property, options, 'string')
     }
-    return typeof b !== 'undefined' ? fn()(a, b) : fn(a)
+    typeof b !== 'undefined' ? fn()(a, b) : fn(a)
 }
 
 export function Bool(prototype: Object, property: PropertyKey): void
@@ -106,7 +106,7 @@ export function Bool(a?: any, b?: any): any {
     const fn = (prototype: Object, property: PropertyKey) => {
         mergeSchema(prototype, property, {}, 'boolean')
     }
-    return a ? fn(a, b) : fn
+    a ? fn(a, b) : fn
 }
 
 export function Arr<T = any>(items: SchemaItem<T>): PropertyDecorator
@@ -137,7 +137,7 @@ export function Required(a?: any, b?: any): any {
     const fn = (prototype: Object, property: PropertyKey) => {
         generateJSONSchemaRoot(prototype).required.push(property)
     }
-    return a ? fn(a, b) : fn
+    a ? fn(a, b) : fn
 }
 
 export function Nullable(prototype: Object, property: PropertyKey): void
@@ -146,7 +146,7 @@ export function Nullable(a?: any, b?: any): any {
     const fn = (prototype: Object, property: PropertyKey) => {
         mergeSchema(prototype, property, {nullable: true})
     }
-    return a ? fn(a, b) : fn
+    a ? fn(a, b) : fn
 }
 
 export function Enum(...values: any[]) {
@@ -166,7 +166,7 @@ export function Const(value: any) {
  * 参数修饰器，执行校验
  */
 
-const DTOPrototype_validateFunction = new WeakMap<object, VerifyFunction>()
+const DTOPrototype_validateFunction = new WeakMap<object, ValidateFunction>()
 
 export function Verify(dto: ClassType, options?: VerifyOptions) {
     return (prototype: Object, property: PropertyKey, index: number) => {

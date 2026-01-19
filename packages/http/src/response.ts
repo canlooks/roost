@@ -9,7 +9,7 @@ export function Res(a?: any, b?: any, c?: any): any {
         const propertyKey_index = getMapValue(component_propertyKey_index, prototype.constructor, () => new Map())
         propertyKey_index.set(propertyKey, parameterIndex)
     }
-    return a ? fn(a, b, c) : fn
+    a ? fn(a, b, c) : fn
 }
 
 export function getInsertResIndex(component: ClassType, propertyKey: PropertyKey) {

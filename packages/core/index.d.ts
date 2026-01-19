@@ -72,8 +72,24 @@ declare namespace Roost {
      * Inject
      */
 
+    /**
+     * Inject a local component synchronous
+     * @param component
+     * @constructor
+     */
     function Inject(component: ClassType): PropertyDecorator
-    function Inject(component: () => Promise<{ default: ClassType }>): PropertyDecorator
+    /**
+     * Inject a provider, such as RPC Controller
+     * @param component
+     * @constructor
+     */
+    function Inject(component: () => any): PropertyDecorator
+    /**
+     * Inject by dynamic import
+     * @param component
+     * @constructor
+     */
+    function Inject(component: () => Promise<{ default: any }>): PropertyDecorator
 
     /**
      * -------------------------------------------------------------------------------------
@@ -142,6 +158,8 @@ declare namespace Roost {
     type ClassType<I = any, A = any> = new (...args: A[]) => I
     type Fn<R = any, A = any, T = any> = (this: T, ...args: A[]) => R
     type Obj<V = any, K extends string = string> = Record<K, V>
+
+    type AsyncMethodDecorator = (target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<Fn<Promise<any>>>) => void
 
     type RecurseConstruct<T> = T extends ClassType<infer R> ? R
         : T extends Map<infer K, infer R> ? Map<K, RecurseConstruct<R>>

@@ -21,7 +21,7 @@ export function Pending(a?: any, b?: any): any {
                 : Promise.resolve()
         }, 3)
     }
-    return a ? fn(a, b) : fn
+    a ? fn(a, b) : fn
 }
 
 export function Ready(target: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor): void
@@ -38,7 +38,7 @@ export function Ready(a?: any, b?: any, c?: any): any {
             instance[propertyKey](res.length === 1 ? res[0] : res)
         }, 3)
     }
-    return c ? fn(a, b, c) : fn
+    c ? fn(a, b, c) : fn
 }
 
 export function allReady() {

@@ -1,11 +1,10 @@
 import {PluginDefinition} from '@canlooks/roost'
 import {createConnection} from './connection'
+import {Options} from 'amqplib'
 
-export type AmqpPluginOptions = {
+export interface AmqpPluginOptions extends Options.Connect {
     name: string
-    url: string
-    username?: string
-    password?: string
+    url?: string
 }
 
 const builtInName = Symbol('amqp')

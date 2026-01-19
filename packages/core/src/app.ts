@@ -78,5 +78,5 @@ export function App(a?: any, b?: any): any {
             instance[propertyKey] = appInstance
         })
     }
-    return a ? fn(a, b) : fn
+    a ? fn(a, b) : fn
 }

@@ -15,7 +15,7 @@ export function Initializer(a?: any, b?: any, c?: any): any {
 
         descriptor.value = methodWrapper(descriptor.value, component, propertyKey)
     }
-    return c ? fn(a, b, c) : fn
+    c ? fn(a, b, c) : fn
 }
 
 export const Init = Initializer
