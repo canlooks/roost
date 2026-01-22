@@ -25,8 +25,8 @@ export function Action(a: string | Obj) {
             } else {
                 eachControllerPatterns(component, pattern => {
                     if (typeof pattern !== 'object') {
-                        const path = joinPath(pattern, a)
-                        stringRoutes.set(path!, {
+                        const path = '/' + joinPath(pattern, a)
+                        stringRoutes.set(path, {
                             path,
                             component,
                             propertyKey

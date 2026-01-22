@@ -10,7 +10,7 @@ export function entryPoints(roost: Roost, app: Express, options: HttpPluginOptio
     for (const [path, {component, propertyKey}] of roost.routeMap) {
         const method = component_propertyKey_method.get(component)?.get(propertyKey)
         if (method) {
-            app[method](path, async (req, res) => {
+            app[method](path, async (req, res, next) => {
                 const instance = roost.container.get(component)
                 const args = [req.body]
 
@@ -51,4 +51,8 @@ export function entryPoints(roost: Roost, app: Express, options: HttpPluginOptio
             })
         }
     }
+
+    app.use((err: any, req: any, res: any, next: any) => {
+        console.log(59, 'err', err)
+    })
 }

@@ -11,7 +11,7 @@ class Sub {
 
     text = 'hi'
 
-    @Inject(() => import('./test2')) asy: any
+    // @Inject(() => import('./test2')) asy: any
 
     @Post('hello/:id')
     async hello(@Params params: { id: string }, @Query query: { search: string }) {
