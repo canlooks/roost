@@ -13,6 +13,10 @@ declare namespace Roost {
 
         constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void)
 
+        /**
+         * `serviceName` will assign by `AmqpPluginOptions.name` when using `amqpPlugin`.
+         */
+        serviceName?: string
         routeMap: Map<string, StringRouteAction>
         patternMap: Map<Obj, ObjectRouteAction>
     }
@@ -42,7 +46,6 @@ declare namespace Roost {
      */
 
     class Component {
-        container: Container
         invoke: InvokeFunction
     }
 

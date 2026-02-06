@@ -1,11 +1,8 @@
-import {ClassType, Roost} from '../index'
+import {ClassType} from '../index'
 import {implementDecorator} from './utility'
 import {defineInvoke} from './invoke'
 
 export class Container {
-    constructor(private app: Roost) {
-    }
-
     private map = new Map<ClassType, object>()
 
     get<C extends ClassType>(component: C): InstanceType<C> {
@@ -18,7 +15,7 @@ export class Container {
         instance.container = this
         instance.invoke = defineInvoke(this)
         this.map.set(component, instance)
-        implementDecorator(component, instance, this.app)
+        implementDecorator(component, instance, this)
         return instance
     }
 

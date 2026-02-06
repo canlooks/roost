@@ -1,6 +1,7 @@
 export * from './action'
 export * from './app'
 export {Pending, Ready} from './async'
+export * from './component'
 export * from './controller'
 export * from './debugHelper'
 export * from './initialize'

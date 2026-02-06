@@ -10,4 +10,6 @@ Roost
         password: 'admin',
         port: 5672
     }))
-    .create(TestController)
+    .create(TestController, testController => {
+        console.log('listener ready')
+    })

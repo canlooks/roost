@@ -8,14 +8,14 @@ export function Inject(component: () => Promise<{ default: any }>): PropertyDeco
 export function Inject(a: ClassType | (() => any)) {
     return (prototype: Object, propertyKey: PropertyKey) => {
         const component = prototype.constructor as ClassType
-        registerDecorator(component, (instance, app) => {
+        registerDecorator(component, (instance, container) => {
             if (isClass(a)) {
-                instance[propertyKey] = app.container.get(a)
+                instance[propertyKey] = container.get(a)
             } else {
                 const res = a()
                 if (isPromise(res)) {
                     const pending = res.then(({default: target}: any) => {
-                        instance[propertyKey] = isClass(target) ? app.container.get(target) : target
+                        instance[propertyKey] = isClass(target) ? container.get(target) : target
                     })
                     pushPendingItem(instance, pending)
                 } else {

@@ -8,6 +8,11 @@ import {Component} from './component'
 import {objectRoutes, stringRoutes} from './route'
 
 export class Roost<T = any> extends Component {
+    /**
+     * -----------------------------------------------------------------------------------
+     * static
+     */
+
     private static created = false
 
     private static usingPlugins = new Set<PluginDefinition>()
@@ -37,13 +42,21 @@ export class Roost<T = any> extends Component {
         return new this(modules, onLoad)
     }
 
+    /**
+     * -----------------------------------------------------------------------------------
+     * instance
+     */
+
+    serviceName?: string
+    container: Container
+
     routeMap = stringRoutes
     patternMap = objectRoutes
 
     constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void) {
         super()
         appInstance = this
-        this.container = new Container(this)
+        this.container = new Container()
         this.invoke = defineInvoke(this.container)
 
         const instances = registerComponents(modules, comp => this.container.get(comp))
@@ -74,7 +87,7 @@ export function App(target: Object, propertyKey: PropertyKey): void
 export function App(): PropertyDecorator
 export function App(a?: any, b?: any): any {
     const fn = (prototype: Object, propertyKey: PropertyKey) => {
-        registerDecorator(prototype.constructor as ClassType, (instance) => {
+        registerDecorator(prototype.constructor as ClassType, instance => {
             instance[propertyKey] = appInstance
         })
     }

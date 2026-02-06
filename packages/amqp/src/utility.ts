@@ -10,7 +10,7 @@ export type Reply<T> = {
     value: T
 }
 
-export async function messageCallbackWrapper(channel: Channel, message: ConsumeMessage | null, callback: (content: string | Obj) => any) {
+export async function messageCallbackWrapper(channel: Channel, message: ConsumeMessage | null, callback: (content: string | object) => any) {
     if (!message) {
         return
     }
