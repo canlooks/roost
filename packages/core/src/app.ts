@@ -1,95 +1,63 @@
-import {ClassType, PluginDefinition, PluginHooks, RecurseConstruct} from '../index'
+import {ClassType, ContainerKey, LazyLoader} from '../index'
 import {Container} from './container'
-import {registerComponents, registerDecorator} from './utility'
-import {allReady, globalPendingArr} from './async'
-import {defineInvoke} from './invoke'
-import {logPrefix} from './debugHelper'
-import {Component} from './component'
-import {objectRoutes, stringRoutes} from './route'
+import {isClass, registerComponents} from './util'
+import {implementInitialize} from './initialize'
+import {implementInject} from './inject'
 
-export class Roost<T = any> extends Component {
-    /**
-     * -----------------------------------------------------------------------------------
-     * static
-     */
+export class Roost {
+    static async create<T extends any[]>(components: [...T]): Promise<Roost>
+    static async create<T>(components: T): Promise<Roost>
 
-    private static created = false
+    static async create<T>(component: ClassType<T>, config?: Record<keyof T, T[keyof T]>): Promise<Roost>
+    static async create<T>(name: string, component: ClassType<T>, config?: Record<keyof T, T[keyof T]>): Promise<Roost>
 
-    private static usingPlugins = new Set<PluginDefinition>()
+    static async create(lazyLoader: LazyLoader): Promise<Roost>
+    static async create(name: string, lazyLoader: LazyLoader): Promise<Roost>
 
-    static use(plugins: PluginDefinition[]): typeof Roost
-    static use(plugin: PluginDefinition): typeof Roost
-    static use(p: any) {
-        if (this.created) {
-            throw Error(logPrefix + '"Roost.use()" must be executed before "Roost.create()"')
+    static async create(a: any, b?: any, c?: any) {
+        const app = new Roost()
+        if (typeof a === 'object') {
+            await registerComponents(a, component => app.registerComponent(component, component))
+        } else {
+            const name = typeof a === 'string' ? a : b
+            const component = typeof a === 'string' ? b : a
+            const config = c || (typeof b === 'object' ? b : void 0)
+
+            await app.registerComponent(name, component, config)
         }
 
-        const pluginHooks = Array.isArray(p) ? p : [p]
-        pluginHooks.forEach(hook => {
-            this.usingPlugins.add(hook)
-        })
-
-        return this
+        return app
     }
 
-    static create<T extends any[]>(modules: [...T], onLoad?: (instances: RecurseConstruct<T>) => void): Roost
-    static create<T>(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void): Roost
-    static create(modules: any, onLoad?: (instances: any) => void) {
-        if (this.created) {
-            throw Error(logPrefix + 'Roost app is already created.')
-        }
-        this.created = true
-        return new this(modules, onLoad)
-    }
+    container = new Container()
 
-    /**
-     * -----------------------------------------------------------------------------------
-     * instance
-     */
-
-    serviceName?: string
-    container: Container
-
-    routeMap = stringRoutes
-    patternMap = objectRoutes
-
-    constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void) {
-        super()
-        appInstance = this
-        this.container = new Container()
-        this.invoke = defineInvoke(this.container)
-
-        const instances = registerComponents(modules, comp => this.container.get(comp))
-
-        const pendingArr = this.triggerHook('onCreate', this)
-        globalPendingArr.push(...pendingArr)
-
-        allReady().then(() => {
-            onLoad?.(instances)
-        })
-    }
-
-    private triggerHook<T extends keyof PluginHooks>(name: T, ...args: Parameters<Required<PluginHooks>[T]>) {
-        const pendingArr = []
-        for (const pluginHooks of Roost.usingPlugins) {
-            const hook = pluginHooks[name]
-            if (typeof hook === 'function') {
-                pendingArr.push(hook(...args as [any]))
+    async registerComponent<T>(name: ContainerKey<T>, component: ClassType<T> | LazyLoader, config?: Record<keyof T, T[keyof T]>) {
+        let item = this.container.get<any>(name)
+        if (!item?.instance) {
+            item ||= {}
+            if (typeof name === 'string') {
+                item.name = name
+            }
+            if (isClass(component)) {
+                item.component = component
+                item.instance = new component()
+                this.container.set(name, item)
+                // Set config
+                if (config) {
+                    for (const k in config) {
+                        item.instance[k] = config[k]
+                    }
+                }
+                // Inject
+                await implementInject(component, item.instance, this)
+                // Initialize
+                await implementInitialize(component, item.instance)
+            } else {
+                item.loader = component
+                this.container.set(name, item)
             }
         }
-        return pendingArr
-    }
-}
 
-let appInstance: Roost
-
-export function App(target: Object, propertyKey: PropertyKey): void
-export function App(): PropertyDecorator
-export function App(a?: any, b?: any): any {
-    const fn = (prototype: Object, propertyKey: PropertyKey) => {
-        registerDecorator(prototype.constructor as ClassType, instance => {
-            instance[propertyKey] = appInstance
-        })
+        return item.instance
     }
-    a ? fn(a, b) : fn
 }

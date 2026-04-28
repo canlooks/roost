@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
-    "rootDir": ".",
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "importHelpers": true,
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,

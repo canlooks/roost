@@ -1,25 +1,13 @@
-import {ClassType} from '../index'
-import {implementDecorator} from './utility'
-import {defineInvoke} from './invoke'
+import {ClassType, ContainedItem, ContainerKey, LazyLoader} from '../index'
 
 export class Container {
-    private map = new Map<ClassType, object>()
+    map = new Map<string | ClassType | LazyLoader, ContainedItem>()
 
-    get<C extends ClassType>(component: C): InstanceType<C> {
-        const instance = this.map.get(component) as InstanceType<C> | undefined
-        return instance || this.createInstance(component)
+    get<T>(key: ContainerKey<T>): ContainedItem<T> | undefined {
+        return this.map.get(key)
     }
 
-    private createInstance<C extends ClassType>(component: C): InstanceType<C> {
-        const instance = new component()
-        instance.container = this
-        instance.invoke = defineInvoke(this)
-        this.map.set(component, instance)
-        implementDecorator(component, instance, this)
-        return instance
-    }
-
-    set<C extends ClassType>(component: C, instance: InstanceType<C>) {
-        this.map.set(component, instance)
+    set<T>(key: ContainerKey<T>, value: ContainedItem<T>) {
+        this.map.set(key, value)
     }
 }

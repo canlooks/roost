@@ -1,21 +1,30 @@
-import {registerDecorator} from './utility'
+import {getMapValue} from './util'
 import {ClassType} from '../index'
-import {methodWrapper} from './debugHelper'
-import {pushPendingItem} from './async'
 
-export function Initializer(target: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor): void
-export function Initializer(): MethodDecorator
-export function Initializer(a?: any, b?: any, c?: any): any {
+const component_initializes = new WeakMap<object, Set<PropertyKey>>()
+
+export function Initialize(target: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor): void
+export function Initialize(): MethodDecorator
+export function Initialize(a?: any, b?: any, c?: any): any {
     const fn = (prototype: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor) => {
-        const component = prototype.constructor as ClassType
-
-        registerDecorator(component, instance => {
-            pushPendingItem(instance, instance[propertyKey]())
-        }, 2)
-
-        descriptor.value = methodWrapper(descriptor.value, component, propertyKey)
+        const initializes = getMapValue(component_initializes, prototype.constructor, () => new Set())
+        initializes.add(propertyKey)
     }
-    c ? fn(a, b, c) : fn
+    return c ? fn(a, b, c) : fn
 }
 
-export const Init = Initializer
+export const Init = Initialize
+
+export async function implementInitialize<T>(component: ClassType<T>, instance: T) {
+    const initializes = component_initializes.get(component)
+    if (initializes) {
+        const promises: Promise<void>[] = []
+        for (const property of initializes) {
+            const initializer = instance[property as keyof T]
+            if (typeof initializer === 'function') {
+                promises.push(initializer.call(instance))
+            }
+        }
+        await Promise.all(promises)
+    }
+}

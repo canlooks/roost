@@ -1,168 +1,14 @@
 declare namespace Roost {
     /**
      * -------------------------------------------------------------------------------------
-     * App
-     */
-
-    class Roost<T = any> extends Component {
-        static use(plugins: PluginHooks[]): typeof Roost
-        static use(plugin: PluginHooks): typeof Roost
-
-        static create<T extends any[]>(modules: [...T], onLoad?: (instances: RecurseConstruct<T>) => void): Roost
-        static create<T>(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void): Roost
-
-        constructor(modules: T, onLoad?: (instances: RecurseConstruct<T>) => void)
-
-        /**
-         * `serviceName` will assign by `AmqpPluginOptions.name` when using `amqpPlugin`.
-         */
-        serviceName?: string
-        routeMap: Map<string, StringRouteAction>
-        patternMap: Map<Obj, ObjectRouteAction>
-    }
-
-    const App: PropertyDecorator & (() => PropertyDecorator)
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Module
-     */
-
-    function Module(modules: any): ClassDecorator
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Container
-     */
-
-    class Container {
-        get<C extends ClassType>(component: C): InstanceType<C>
-        set<C extends ClassType>(component: C, instance: InstanceType<C>): void
-    }
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Component
-     */
-
-    class Component {
-        invoke: InvokeFunction
-    }
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Initializer
-     */
-
-    const Initializer: MethodDecorator & (() => MethodDecorator)
-    /**
-     * @alias {@link Initializer}
-     */
-    const Init: typeof Initializer
-
-    /**
-     * Inject a promise to a property, witch resolve on component ready
-     */
-    const Pending: PropertyDecorator & (() => PropertyDecorator)
-
-    /**
-     * Let function execute on component ready.
-     */
-    const Ready: MethodDecorator & (() => MethodDecorator)
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Inject
-     */
-
-    /**
-     * Inject a local component synchronous
-     * @param component
-     * @constructor
-     */
-    function Inject(component: ClassType): PropertyDecorator
-    /**
-     * Inject a provider, such as RPC Controller
-     * @param component
-     * @constructor
-     */
-    function Inject(component: () => any): PropertyDecorator
-    /**
-     * Inject by dynamic import
-     * @param component
-     * @constructor
-     */
-    function Inject(component: () => Promise<{ default: any }>): PropertyDecorator
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Controller
-     */
-
-    function Controller(path: string): ClassDecorator
-    function Controller(pattern: Obj): ClassDecorator
-
-    function eachControllerPatterns(controller: ClassType, callback: (pattern: string | Obj | undefined) => any): void
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Action
-     */
-
-    function Action(path: string): MethodDecorator
-    function Action(pattern: Obj): MethodDecorator
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Invoke
-     */
-
-    type InvokeFunction = {
-        <T = any>(path: string, ...args: any): T
-        <T = any>(pattern: Obj, ...args: any): T
-    }
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Params
-     */
-
-    const Params: ParameterDecorator & (() => ParameterDecorator)
-
-    function getInsertParamsIndex(component: ClassType, propertyKey: PropertyKey): number | null
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Query
-     */
-
-    const Query: ParameterDecorator & (() => ParameterDecorator)
-
-    function getInsertQueryIndex(component: ClassType, propertyKey: PropertyKey): number | null
-
-    /**
-     * -------------------------------------------------------------------------------------
-     * Plugin
-     */
-
-    type PluginHooks = {
-        onCreate?: (app: Roost) => void
-    }
-
-    interface PluginDefinition extends PluginHooks {
-        name: string | symbol
-    }
-
-    /**
-     * -------------------------------------------------------------------------------------
      * Internal types
      */
 
     type ClassType<I = any, A = any> = new (...args: A[]) => I
-    type Fn<R = any, A = any, T = any> = (this: T, ...args: A[]) => R
-    type Obj<V = any, K extends string = string> = Record<K, V>
 
-    type AsyncMethodDecorator = (target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<Fn<Promise<any>>>) => void
+    type Fn<R = any, A = any, T = any> = (this: T, ...args: A[]) => R
+
+    type Obj<V = any, K extends string = string> = Record<K, V>
 
     type RecurseConstruct<T> = T extends ClassType<infer R> ? R
         : T extends Map<infer K, infer R> ? Map<K, RecurseConstruct<R>>
@@ -170,51 +16,59 @@ declare namespace Roost {
                 : T extends Record<any, any> | any[] ? { [K in keyof T]: RecurseConstruct<T[K]> }
                     : T
 
-    type ActionItem = {
-        component: ClassType
-        propertyKey: PropertyKey
-    }
+    /**
+     * -------------------------------------------------------------------------------------
+     * Lazy
+     */
 
-    interface StringRouteAction extends ActionItem {
-        path?: string
-    }
+    type LazyLoader = () => Promise<{ default: any }>
 
-    interface ObjectRouteAction extends ActionItem {
-        pattern: Obj
+    export function lazy<T extends LazyLoader>(load: T): T
+
+    /**
+     * -------------------------------------------------------------------------------------
+     * App
+     */
+
+    class Roost {
+
+        static create<T extends any[]>(components: [...T]): Promise<Roost>
+        static create<T>(components: T): Promise<Roost>
+
+        static create<T>(component: ClassType<T>, config?: Record<keyof T, T[keyof T]>): Promise<Roost>
+        static create<T>(name: string, component: ClassType<T>, config?: Record<keyof T, T[keyof T]>): Promise<Roost>
+
+        static create(lazyLoader: LazyLoader): Promise<Roost>
+        static create(name: string, lazyLoader: LazyLoader): Promise<Roost>
+
+        container: Container
+
+        registerComponent<T>(name: ContainerKey<T>, component: ClassType<T> | LazyLoader, config?: Record<keyof T, T[keyof T]>): Promise<T>
     }
 
     /**
      * -------------------------------------------------------------------------------------
-     * Utility
+     * Container
      */
 
-    function registerComponents<T extends any[]>(components: [...T], register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
-    function registerComponents<T>(components: T, register: <C extends ClassType>(component: C) => InstanceType<C>): RecurseConstruct<T>
+    type ContainerKey<T = any> = string | ClassType<T> | LazyLoader
 
-    function registerDecorator<C extends ClassType>(component: C, callback: (instance: InstanceType<C>, app: Roost) => void, sequence?: number): void
+    type ContainedItem<T = any> = {
+        name?: string
+        component?: ClassType<T>
+        instance?: T
+        loader?: LazyLoader
+    }
 
-    function implementDecorator<C extends ClassType>(component: C, instance: InstanceType<C>, app: Roost): void
+    class Container {
+        get<T>(name: string): ContainedItem<T> | undefined
+        get<T>(component: ClassType<T>): ContainedItem<T> | undefined
+        get<T>(loader: LazyLoader): ContainedItem<T> | undefined
 
-    function getMapValue<K, V>(data: Map<K, V>, key: K): V | undefined
-    function getMapValue<K, V>(data: Map<K, V>, key: K, defaultValue: () => V): V
-    function getMapValue<K extends object, V>(data: WeakMap<K, V>, key: K): V | undefined
-    function getMapValue<K extends object, V>(data: WeakMap<K, V>, key: K, defaultValue: () => V): V
-
-    function joinPath(path1?: string, path2?: string, separateWithSlash?: boolean): string
-
-    function assignObject(obj1: Obj, obj2?: Obj): Obj
-
-    function matchObject(routeObject: Obj, invokeObject: Obj): boolean
-
-    function isPromise<T>(it: any): it is Promise<T>
-
-    function isClass(fn: Function | ClassType): fn is ClassType
-
-    const logPrefix: string
-
-    function methodWrapper<F extends Fn>(fn: F, target: Function, p: PropertyKey): F
-
-    function printError(target: Function, p: PropertyKey): void
+        set<T>(name: string, item: ContainedItem<T>): void
+        set<T>(component: ClassType<T>, item: ContainedItem<T>): void
+        set<T>(loader: LazyLoader, item: ContainedItem<T>): void
+    }
 }
 
 export = Roost
