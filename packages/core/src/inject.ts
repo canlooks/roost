@@ -1,43 +1,41 @@
-import {ClassType, ContainerKey, LazyLoader, Roost} from '../index'
-import {getMapValue} from './util'
-import {InternalError} from './log'
+import {ComponentType} from '../index'
+import {Roost} from './app'
+import {capture} from './debug'
 
-const component_property_injectName = new WeakMap<object, Map<PropertyKey, ContainerKey>>()
+type Injectable = Roost | ComponentType | string
 
+const prototype_property_injectable = new WeakMap<Object, Map<string, Injectable>>()
+
+export function Inject(app: Roost): PropertyDecorator
+export function Inject(component: ComponentType): PropertyDecorator
 export function Inject(name: string): PropertyDecorator
-export function Inject(component: ClassType): PropertyDecorator
-export function Inject(loader: LazyLoader): PropertyDecorator
-
-export function Inject(injectName: any) {
-    return (prototype: Object, propertyKey: PropertyKey) => {
-        const property_injectName = getMapValue(component_property_injectName, () => new Map())!
-        property_injectName.set(propertyKey, injectName)
+export function Inject(injectable: Injectable) {
+    return (prototype: Object, property: string) => {
+        const property_injectable = prototype_property_injectable.get(prototype) || new Map<string, Injectable>()
+        property_injectable.set(property, injectable)
+        prototype_property_injectable.set(prototype, property_injectable)
     }
 }
 
-export async function implementInject<T>(component: ClassType<T>, instance: T, app: Roost) {
-    const property_injectName = component_property_injectName.get(component)
-    if (property_injectName) {
-        const promises: Promise<void>[] = []
-        for (const [property, injectName] of property_injectName) {
-            const item = app.container.get<any>(injectName as any)
-            if (!item) {
-                if (typeof injectName === 'string') {
-                    throw new InternalError(`Cannot find name "${injectName}" in runtime container.`, {component, property})
-                }
-                throw new InternalError(`Cannot find component "${injectName.name}" in runtime container.`, {component, property})
+export async function implementInjectDecorator(app: Roost, instance: any) {
+    const prototype = Object.getPrototypeOf(instance)
+    const property_injectable = prototype_property_injectable.get(prototype)
+    if (!property_injectable) {
+        return
+    }
+    for (const [property, injectable] of property_injectable) {
+        let injectValue
+        if (typeof injectable === 'string') {
+            injectValue = app.container.get(injectable)
+            if (!injectValue) {
+                throw capture(`"${injectable}" was not registered.`, prototype.constructor, property)
             }
-            if (item.instance) {
-                instance[property as keyof T] = item.instance
-            } else {
-                promises.push(
-                    item.loader!().then(async ({default: component}) => {
-                        const name = typeof injectName === 'string' ? injectName : item.loader!
-                        instance[property as keyof T] =  await app.registerComponent<any>(name, component)
-                    })
-                )
-            }
+        } else if (typeof injectable === 'function') {
+            injectValue = await app.utility.registerComponent(injectable)
+        } else {
+            // injectable === Roost
+            injectValue = app
         }
-        await Promise.all(promises)
+        instance[property] = injectValue
     }
 }

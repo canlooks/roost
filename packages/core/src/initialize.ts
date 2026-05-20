@@ -1,30 +1,25 @@
-import {getMapValue} from './util'
-import {ClassType} from '../index'
+const prototype_initializers = new WeakMap<Object, Set<string>>()
 
-const component_initializes = new WeakMap<object, Set<PropertyKey>>()
-
-export function Initialize(target: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor): void
+export function Initialize(target: Object, property: string, descriptor: PropertyDescriptor): void
 export function Initialize(): MethodDecorator
-export function Initialize(a?: any, b?: any, c?: any): any {
-    const fn = (prototype: Object, propertyKey: PropertyKey, descriptor: PropertyDescriptor) => {
-        const initializes = getMapValue(component_initializes, prototype.constructor, () => new Set())
-        initializes.add(propertyKey)
+export function Initialize(a?: any, b?: any, c?: any) {
+    const fn = (prototype: Object, property: string, descriptor: PropertyDescriptor) => {
+        const initializers = prototype_initializers.get(prototype) || new Set<string>()
+        initializers.add(property)
+        prototype_initializers.set(prototype, initializers)
     }
     return c ? fn(a, b, c) : fn
 }
 
-export const Init = Initialize
-
-export async function implementInitialize<T>(component: ClassType<T>, instance: T) {
-    const initializes = component_initializes.get(component)
-    if (initializes) {
-        const promises: Promise<void>[] = []
-        for (const property of initializes) {
-            const initializer = instance[property as keyof T]
-            if (typeof initializer === 'function') {
-                promises.push(initializer.call(instance))
-            }
-        }
-        await Promise.all(promises)
+export async function implementInitializeDecorator(instance: any) {
+    const prototype = Object.getPrototypeOf(instance)
+    const initializers = prototype_initializers.get(prototype)
+    if (!initializers) {
+        return
     }
+    const promises: Promise<void>[] = []
+    for (const initializer of initializers) {
+        promises.push(instance[initializer]())
+    }
+    await Promise.all(promises)
 }

@@ -1,13 +1,17 @@
-import {ClassType, ContainedItem, ContainerKey, LazyLoader} from '../index'
+import {ComponentType} from '../index'
 
 export class Container {
-    map = new Map<string | ClassType | LazyLoader, ContainedItem>()
+    map = new Map<string | ComponentType, Promise<any>>()
 
-    get<T>(key: ContainerKey<T>): ContainedItem<T> | undefined {
+    get<T = any>(name: string): Promise<T>
+    get<T>(component: ComponentType<T>): Promise<T>
+    get(key: string | ComponentType) {
         return this.map.get(key)
     }
 
-    set<T>(key: ContainerKey<T>, value: ContainedItem<T>) {
-        this.map.set(key, value)
+    set(name: string, pendingInstance: Promise<any>): void
+    set<T>(component: ComponentType<T>, pendingInstance: Promise<T>): void
+    set(key: string | ComponentType, pendingInstance: Promise<any>) {
+        this.map.set(key, pendingInstance)
     }
 }
