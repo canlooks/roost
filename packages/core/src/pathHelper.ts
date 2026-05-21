@@ -86,3 +86,7 @@ export function joinPath(...paths: string[]) {
     }
     return paths.reduce(fn)
 }
+
+export function sortObjectKeys(obj: Record<string, any>) {
+
+}

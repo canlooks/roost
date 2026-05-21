@@ -1,9 +1,11 @@
 import {Roost} from '../src/app'
 import {Action, Controller} from '../src/controller'
+import {inspect} from 'util'
 
-@Controller('ctrl')
+@Controller({ctrl: 'A'})
 class A {
-    @Action('act')
+    @Action({act: 'act1'})
+    @Action({act: 'act1'})
     action() {
 
     }
@@ -12,5 +14,5 @@ class A {
 console.log('start')
 
 Roost.create(A).then(app => {
-    console.table(app.pathMap)
+    console.log(inspect(app.patternMap))
 })

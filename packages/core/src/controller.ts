@@ -1,4 +1,4 @@
-import {ComponentType, Pattern} from '../index'
+import {ComponentType, Pattern, PatternMap, PatternMapValue, RouteItem} from '../index'
 import {Roost} from './app'
 import {joinPath} from './pathHelper'
 
@@ -43,7 +43,7 @@ export function Action(path: string, option?: Record<any, any>): MethodDecorator
 export function Action(regular: RegExp, option?: Record<any, any>): MethodDecorator
 export function Action(pattern: Pattern, option?: Record<any, any>): MethodDecorator
 
-export function Action(key: string | Pattern, option?: Record<any, any>) {
+export function Action(key: string | RegExp | Pattern, option?: Record<any, any>) {
     return (prototype: Object, property: string, descriptor: PropertyDescriptor) => {
         const map = typeof key === 'string' ? prototype_property_paths
             : key instanceof RegExp ? prototype_property_regular
@@ -59,9 +59,9 @@ export function Action(key: string | Pattern, option?: Record<any, any>) {
 
 export function implementControllerDecorator(app: Roost, instance: any) {
     const prototype = Object.getPrototypeOf(instance)
-    
+
     // path mode -----------------------------------------------------------------------
-    
+
     const pathOptionMap = prototype_property_paths.get(prototype)
     if (pathOptionMap) {
         const setPathItem = (controllerPath?: string, controllerOption?: Record<any, any>) => {
@@ -109,11 +109,7 @@ export function implementControllerDecorator(app: Roost, instance: any) {
                         ...controllerOption,
                         ...option
                     }
-
-                    // TODO 不能像path一样处理，因为pattern每次都会得到新对象
-                    // const routeItems = app.patternMap.get(pattern) || new Set()
-                    // routeItems.add({option, instance, property})
-                    // app.pathMap.set(path, routeItems)
+                    setPatternMap(app.patternMap, pattern, {option, instance, property})
                 }
             }
         }
@@ -125,5 +121,26 @@ export function implementControllerDecorator(app: Roost, instance: any) {
         } else {
             setPatternItem()
         }
+    }
+}
+
+function setPatternMap(map: PatternMap, pattern: Pattern, routeItem: RouteItem) {
+    const keys = Object.keys(map).sort((a, b) => a === b ? 0 : a < b ? -1 : 1)
+
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i]
+        const isLast = i === keys.length - 1
+        let item = map.get(key)
+
+        if (!item) {
+            item = isLast
+                ? routeItem
+                : {
+                    value: pattern[key],
+                    children: new Map()
+                }
+        }
+        map.set(key, item)
+        map = (item as PatternMapValue).children
     }
 }
