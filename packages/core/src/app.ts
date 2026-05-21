@@ -1,6 +1,6 @@
 import {Container} from './container'
 import {Utility} from './utility'
-import {ComponentType} from '../index'
+import {ComponentType, Pattern, RouteItem} from '../index'
 
 export class Roost {
     static async create(component: ComponentType): Promise<Roost>
@@ -13,5 +13,10 @@ export class Roost {
     }
 
     container = new Container()
+
     utility = new Utility(this)
+
+    pathMap = new Map<string, Set<RouteItem>>()
+
+    patternMap = new Map<Pattern, Set<RouteItem>>()
 }

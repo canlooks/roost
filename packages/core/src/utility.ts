@@ -3,6 +3,7 @@ import {Roost} from './app'
 import {implementModuleDecorator} from './module'
 import {implementInjectDecorator} from './inject'
 import {implementInitializeDecorator} from './initialize'
+import {implementControllerDecorator} from './controller'
 
 export class Utility {
     constructor(private app: Roost) {
@@ -41,6 +42,7 @@ export class Utility {
         if (!pendingInstance) {
             pendingInstance = new Promise(async resolve => {
                 const instance = new Component()
+                implementControllerDecorator(this.app, instance)
                 await Promise.all([
                     implementModuleDecorator(this.app, Component),
                     implementInjectDecorator(this.app, instance)
